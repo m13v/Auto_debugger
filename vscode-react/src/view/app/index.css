@@ -1,12 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 li {
-    margin-bottom: 15px;
-  }
-  
-  input {
-    margin-left: 10px;
-  }
-  
-  .save {
-    margin-top: 10px;
-  }
-  
+  margin-bottom: 15px;
+}
+
+input {
+  margin-left: 10px;
+}
+
+.save {
+  margin-top: 10px;
+}
+
+body {
+  font-family: var(--font-inter), sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-inter), sans-serif;
+}

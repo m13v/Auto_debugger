@@ -1,6 +1,7 @@
 import * as React from "react";
 import { IConfig, IUser, ICommand, CommandAction } from "./model";
-import DummyChatComponent from './ChatComponent'; // Import the chat component
+// import DummyChatComponent from './ChatComponent'; // Import the chat component
+import Chat from './Chat'; // Import the chat component
 // import Layout from "./layout.jsx";
 
 interface IConfigProps {
@@ -68,7 +69,7 @@ export default class Config extends React.Component<
   renderUsers(users: IUser[]) {
     return (
       <React.Fragment>
-        <h2>2Test_User List :</h2>
+        <h2>Glavin Test 3 User List :</h2>
         <ul className="">
           {users && users.length > 0
             ? users.map((user, userIndex) => {
@@ -121,7 +122,7 @@ export default class Config extends React.Component<
           value="Save the configuration"
           onClick={() => this.saveConfig()}
         />
-        <DummyChatComponent /> {/* Render the chat component here */}
+        <Chat /> {/* Render the chat component here */}
         {/* <Layout />, */}
       </React.Fragment>
     );
