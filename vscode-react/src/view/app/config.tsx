@@ -31,6 +31,12 @@ export default class Config extends React.Component<
     // Handle the message inside the webview
     window.addEventListener('message', event => {
       console.log('Webview received message:', event.data);
+
+      this.props.vscode.postMessage({
+        command: 'pong',
+        text: 'Pong from webview'
+      });
+
     })
 
   }

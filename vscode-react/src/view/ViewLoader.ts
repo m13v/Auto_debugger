@@ -2,9 +2,9 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 
-import { IConfig, ICommand, CommandAction, IMessage } from "./app/model";
+import { type IConfig, ICommand, CommandAction, IMessage } from "./app/model";
 
-// import { Messenger } from 'vscode-messenger-webview';
+import { CodeAgent } from '../server/CodeAgent'
 
 
 export default class ViewLoader {
@@ -15,7 +15,8 @@ export default class ViewLoader {
   constructor(fileUri: vscode.Uri, extensionPath: string) {
     this._extensionPath = extensionPath;
 
-    
+    console.log('EXTENSION?!?!??!!?')
+
     let config = this.getFileContent(fileUri);
     if (config) {
       this._panel = vscode.window.createWebviewPanel(
@@ -36,6 +37,7 @@ export default class ViewLoader {
       this._panel.webview.onDidReceiveMessage(
         message => {
           console.log('Extension received message', message)
+          codeAgent.receiveMessage(message);
 
           if (message.command) {
             // Handling messages with 'command'
@@ -59,12 +61,25 @@ export default class ViewLoader {
         this._disposables
       );
 
-      this._panel.webview.postMessage({
-        command: 'update',
-        data: {
-          "hello": "extension",
-         }
+      // this._panel.webview.postMessage({
+      //   command: 'update',
+      //   data: {
+      //     "hello": "extension",
+      //    }
+      // });
+
+      const codeAgent = new CodeAgent({
+        postMessage: (message: any) => this._panel?.webview.postMessage(message)
       });
+      console.log('Started code agent', codeAgent);
+
+      // this._panel.webview.onDidReceiveMessage(
+      //   message => {
+      //     console.log('Extension received message', message)
+
+      //     codeAgent.receiveMessage(message);
+      // })
+
 
     ////////////////////////////////////////////////////////////////
 
