@@ -1,9 +1,39 @@
-import React from 'react';
-import { AvatarImage, AvatarFallback, Avatar } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+/**
+ * v0 by Vercel.
+ * @see https://v0.dev/t/ACze857k4tw
+ * Documentation: https://v0.dev/docs#integrating-generated-code-into-your-nextjs-app
+ */
+import React from "react"
+// import { AvatarImage, AvatarFallback, Avatar } from "@/components/ui/avatar"
+// import { Button } from "@/components/ui/button"
+// import { Input } from "@/components/ui/input"
 
-export default function Component() {
+function AvatarImage(props: any) {
+  // return <img {...props} />
+  return null;
+}
+
+function AvatarFallback(props: any) {
+  // return <div {...props} />
+  return null;
+}
+
+function Avatar(props: any) {
+  // return <div {...props} />
+  return null;
+}
+
+function Button(props: any) {
+  // return <button {...props} />
+  return null;
+}
+
+function Input(props: any) {
+  // return <input {...props} />
+  return null;
+}
+
+export default function Chat() {
   return (
     <div className="flex h-screen w-full flex-col">
       <header className="flex items-center justify-between bg-gray-900 px-4 py-3 text-white">
@@ -197,7 +227,7 @@ export default function Component() {
   )
 }
 
-function SendIcon(props) {
+function SendIcon(props: any) {
   return (
     <svg
       {...props}

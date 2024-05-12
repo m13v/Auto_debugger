@@ -1,14 +1,17 @@
-const path = require("path");
+const path = require("node:path");
 
 module.exports = {
   entry: {
-    configViewer: "./src/view/app/index.tsx"
+    configViewer: [
+      "./src/view/app/index.tsx"
+    ],
   },
   output: {
     path: path.resolve(__dirname, "configViewer"),
     filename: "[name].js"
   },
-  devtool: "eval-source-map",
+  // devtool: "eval-source-map",
+  devtool: "inline-source-map",
   resolve: {
     extensions: [".js", "jsx", ".ts", ".tsx", ".json"]
   },
@@ -23,10 +26,14 @@ module.exports = {
         test: /\.css$/,
         use: [
           {
-            loader: "style-loader"
+            loader: "style-loader",
+            options: { injectType: "styleTag" },
           },
           {
             loader: "css-loader"
+          },
+          {
+            loader: "postcss-loader"
           }
         ]
       }
