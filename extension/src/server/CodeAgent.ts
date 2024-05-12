@@ -1,61 +1,33 @@
 import vm from "vm";
-import type * as vscode from "vscode";
 
 import Groq from "groq-sdk";
 // import dotenv from "dotenv";
 import type { CompletionCreateParams } from "groq-sdk/resources/chat";
-import type { Message } from "@/Chat";
+import {
+	type AutoDebugContext,
+	GroqModels,
+	type Message,
+	type postMessage,
+	type Program,
+	type ExecutionResult,
+} from "../view/app/model";
+// } from "@/model";
+
+// import type { Message } from "@/Chat";
 // dotenv.config();
 
-const GROQ_API_KEY = "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"
+const GROQ_API_KEY = "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";
 
 const groq = new Groq({
-  apiKey: GROQ_API_KEY,
+	apiKey: GROQ_API_KEY,
 });
-
-enum GroqModels {
-	Llama3_8b = "llama3-8b-8192",
-	Llama3_70b = "llama3-70b-8192",
-}
-
-// console.log('process.env.GROQ_API_KEY', process.env.GROQ_API_KEY);
-
-type postMessage = vscode.WebviewPanel["webview"]["postMessage"]
-
-// interface AcceptanceCriteria {
-// 	criteria: string;
-// 	code: string;
-// }
-
-type ExecutionResult = {
-	returnValue: any;
-	stdout: string;
-	stderr: string;
-};
-
-interface Program {
-	code: string;
-	result?: ExecutionResult;
-	analysis?: string;
-	status?: "complete" | "incomplete";
-	/**
-   * Reason for status
-   */
-  reason?: string;
-}
-
-interface Context {
-	goal: string;
-	scratchpad: string;
-	// acceptanceCriterias: AcceptanceCriteria[];
-	history: Program[];
-}
 
 export class CodeAgent {
 	private postMessage: postMessage;
-  private messages: Message[] = [];
+	private messages: Message[] = [];
 
-  private persona = "You are an expert software engineer with knowledge of debugging best practices.";
+	private persona =
+		"You are an expert software engineer with knowledge of debugging best practices. You write JavaScript/TypeScript/Node.js code.";
 
 	constructor({ postMessage }: { postMessage: postMessage }) {
 		this.postMessage = postMessage;
@@ -69,46 +41,107 @@ export class CodeAgent {
 	public async onReceiveMessage(message: any) {
 		console.log("CodeAgent received message:", message);
 
-    switch (message.command) {
-      case 'message': {
-        const userMessage: Message = { type: 'user', text: message.text };
-        this.messages.push(userMessage);
+		switch (message.command) {
+			case "message": {
+				const userMessage: Message = { type: "user", text: message.text };
+				this.messages.push(userMessage);
 
-        // this.sendMessage({
-        //   command: 'message',
-        //   text: `${message.text} back!`
-        // });
+				// this.sendMessage({
+				//   command: 'message',
+				//   text: `${message.text} back!`
+				// });
 
-        const prompt = message.text;
+				const prompt = message.text;
 
-        const chatCompletion = await groq.chat.completions.create({
-          messages: [
-            {
-              role: "system",
-              content: this.persona,
-            },
-            { role: "user", content: prompt },
-          ],
-          model: GroqModels.Llama3_8b,
-          temperature: 0.5,
-          max_tokens: 1024,
-          top_p: 1,
+				const chatCompletion = await groq.chat.completions.create({
+					messages: [
+						{
+							role: "system",
+							content: this.persona,
+						},
+						{ role: "user", content: prompt },
+					],
+					model: GroqModels.Llama3_8b,
+					temperature: 0.5,
+					max_tokens: 1024,
+					top_p: 1,
+				});
+
+				const res = chatCompletion.choices[0].message.content;
+
+				this.sendMessage({
+					command: "message",
+					text: res,
+				});
+
+				await this.codeGen(prompt);
+				console.log("codeGen done");
+
+				break;
+			}
+		}
+	}
+
+	async codeGen(_goal: string) {
+    // FIXME
+    const goal = `Write a function which can check whether the following string is valid or not.
+- "abc" => true
+- "abd" => false
+- "aabbcc" => true
+- "aaabbbccc" => true
+- "aaabbbcccc" => false
+- "aabbccdd" => true
+- "aabbccdde" => false
+- "aaaaabbbbbcccccdddddeeeee" => true
+
+A string is valid if it has the same number of characters repeated in a sequence.
+And the characters in the sequence should be in incrementing alphabetical order.
+`;
+    /*
+		const context: AutoDebugContext = {
+			goal,
+			scratchpad: "",
+			history: [],
+		};
+		return new Promise<void>((resolve) => {
+			let code = 0;
+			const intervalId = setInterval(() => {
+				code++;
+        context.history.push({
+          code: `console.log(Math.pow(2, ${code}));`,
         });
 
-        const res = chatCompletion.choices[0].message.content;
+				this.sendMessage({
+					command: "update-context",
+					context,
+				});
+			}, 100);
 
-        this.sendMessage({
-          command: 'message',
-          text: res
-        });
+			setTimeout(() => {
+				clearInterval(intervalId);
+				resolve();
+			}, 10000);
+		});
+    */
 
-        break;
-      }
+    const onUpdateContext = (context: AutoDebugContext) => {
+      this.sendMessage({
+        command: "update-context",
+        context,
+      });
     }
+
+    await startDebugging({ goal, onUpdateContext });
 	}
 }
 
-async function main() {
+async function startDebugging({
+  goal,
+  onUpdateContext,
+}: {
+  goal: string;
+  onUpdateContext: (context: AutoDebugContext) => void;
+}) {
 	let attempts = 0;
 
 	// const chatCompletion = await groq.chat.completions.create({
@@ -122,28 +155,29 @@ async function main() {
 
 	// const code = await writeCode('Explain the importance of low latency LLMs')
 
-	const context: Context = {
+	const context: AutoDebugContext = {
 		// goal: "Print 2 ^ 32 to console",
-		goal: `Write a function which can check whether the following string is valid or not.
-- "abc" => true
-- "abd" => false
-- "aabbcc" => true
-- "aaabbbccc" => true
-- "aaabbbcccc" => false
-- "aabbccdd" => true
-- "aabbccdde" => false
-- "aaaaabbbbbcccccdddddeeeee" => true
+// 		goal: `Write a function which can check whether the following string is valid or not.
+// - "abc" => true
+// - "abd" => false
+// - "aabbcc" => true
+// - "aaabbbccc" => true
+// - "aaabbbcccc" => false
+// - "aabbccdd" => true
+// - "aabbccdde" => false
+// - "aaaaabbbbbcccccdddddeeeee" => true
 
-A string is valid if it has the same number of characters repeated in a sequence.
-And the characters in the sequence should be in increasing order.
-`,
+// A string is valid if it has the same number of characters repeated in a sequence.
+// And the characters in the sequence should be in increasing order.
+// `,
+    goal,
 		scratchpad: "",
-		acceptanceCriterias: [],
+		// acceptanceCriterias: [],
 		history: [],
 	};
 
 	let done = false;
-	while (!done && attempts < 1) {
+	while (!done && attempts < 10) {
 		try {
 			attempts++;
 
@@ -164,6 +198,7 @@ And the characters in the sequence should be in increasing order.
 				result,
 			};
 			context.history.push(programWithResult);
+			onUpdateContext(context);
 
 			// Reflect
 			const reflection = await reflect(context);
@@ -171,11 +206,20 @@ And the characters in the sequence should be in increasing order.
 			printBanner("Reflection");
 			console.log(reflection);
 
-			context.scratchpad = reflection;
+			programWithResult.analysis = reflection;
+			// context.scratchpad = reflection;
+				onUpdateContext(context);
 
 			// check if done
 			done = await getTaskStatus(context);
 			console.log("IsDone", done);
+
+			programWithResult.status = done ? "complete" : "incomplete";
+			onUpdateContext(context);
+
+			if (done) {
+				break;
+			}
 
 			// 1. Problem decomposition
 			// -- rephrase problem statement
@@ -204,7 +248,7 @@ function printBanner(title: string) {
 // Note: cannot stream with tool calling
 
 // async function plan(context: Context): Promise<Context> {
-async function getTaskStatus(context: Context): Promise<boolean> {
+async function getTaskStatus(context: AutoDebugContext): Promise<boolean> {
 	const prompt = `Given the task and analysis, determine whether the code is complete and satisfies the acceptance criteria. If not, what needs to be done to complete the code?
 
 Must always call the "task_status" tool with your evaluation.
@@ -392,30 +436,68 @@ Task: ${context.goal}`;
 }
 */
 
-async function writeProgram(context: Context): Promise<Program> {
-	const prompt = `Write a JavaScript/Nodejs program for the following task. Only output the code. Do not output any explanation or comments.
+async function writeProgram(context: AutoDebugContext): Promise<Program> {
+	const prompt = `# Instructions
+Write a JavaScript/Nodejs program for the following task. Only output the code. Do not output any explanation or comments.
 
 If the code is in a function, ensure the function is called at least once at the end of the code.
 You can call the function multiple times, such as once for each test case.
 
 Use 'console' statements for outputting debugging information.
 Add clear labels to each console statement to identify the source of the output.
+You will not have line numbers to reference.
+Recommend including expected output in the console statements (not as comments).
 
 Assume the function must return a value if it is not a void function.
 
-Task: ${context.goal}`;
+# Task
+${context.goal}`;
+
+  const messages: CompletionCreateParams.Message[] = [
+    {
+      role: "system",
+      content:
+        "You are an expert software engineer with knowledge of debugging best practices.",
+    },
+    { role: "user", content: prompt },
+  ];
+
+  if (context.history.length > 0) {
+    const lastProgram = context.history[context.history.length - 1];
+    messages.push({
+      role: "assistant",
+      content: lastProgram.code,
+    });
+    messages.push({
+      role: "user",
+      content: `Result: ${lastProgram.result?.returnValue}
+Stdout: ${lastProgram.result?.stdout}
+Stderr: ${lastProgram.result?.stderr}
+
+-----
+
+Given this result, write an analysis of the code.
+`
+    });
+    messages.push({
+      role: "assistant",
+      content: `Analysis:
+${lastProgram.analysis}
+`
+    });
+    messages.push({
+      role: "user",
+      content: `Write an improved version of the code to fix the bugs and meet the acceptance criteria of the task.
+Only output the code. Follow the instructions above.
+`
+    });
+  }
 
 	const chatCompletion = await groq.chat.completions.create({
-		messages: [
-			{
-				role: "system",
-				content:
-					"You are an expert software engineer with knowledge of debugging best practices.",
-			},
-			{ role: "user", content: prompt },
-		],
+		messages,
 		// model: "llama3-8b-8192",
-		model: GroqModels.Llama3_8b,
+		// model: GroqModels.Llama3_8b,
+    model: GroqModels.Llama3_70b,
 		//
 		// Optional parameters
 		//
@@ -511,7 +593,7 @@ async function executeProgram(program: Program): Promise<ExecutionResult> {
 	}
 }
 
-async function reflect(context: Context) {
+async function reflect(context: AutoDebugContext) {
 	const lastProgram = context.history[context.history.length - 1];
 
 	if (!lastProgram) {
@@ -563,6 +645,7 @@ ${lastProgram.result.stderr}
 		],
 		// model: "llama3-8b-8192",
 		model: GroqModels.Llama3_70b,
+		// model: GroqModels.Llama3_8b,
 		//
 		// Optional parameters
 		//
@@ -589,5 +672,3 @@ ${lastProgram.result.stderr}
 
 	return res;
 }
-
-main();

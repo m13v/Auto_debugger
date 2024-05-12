@@ -67,7 +67,8 @@ export default class ViewLoader {
       // });
 
       const codeAgent = new CodeAgent({
-        postMessage: (message: any) => this._panel?.webview.postMessage(message)
+        // biome-ignore lint/style/noNonNullAssertion: <explanation>
+        postMessage: (message: any) => this._panel!.webview.postMessage(message)
       });
       console.log('Started code agent', codeAgent);
 

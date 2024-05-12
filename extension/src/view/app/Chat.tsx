@@ -6,18 +6,7 @@ import { monokaiDimmed } from '@uiw/codemirror-theme-monokai-dimmed';
 
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
-
-export type Message = UserMessage | AssistantMessage;
-
-type UserMessage = {
-	type: "user";
-	text: string;
-};
-type AssistantMessage = {
-	type: "assistant";
-	text: string;
-	code: string;
-};
+import { AssistantMessage, AutoDebugContext, Message, UserMessage } from './model'
 
 type ChatProps = {
 	messages: Message[];
@@ -65,12 +54,8 @@ export default function Chat({ messages: chatMessages, onSendMessage }: ChatProp
 							>
 								<p>{message.text}</p>
 
-                {'code' in message && (
-                  <CodeMirror value={message.code} height="200px"
-                  extensions={[javascript({ jsx: true })]}
-                  theme={monokaiDimmed}
-                  // onChange={onChange}
-                  />
+                {message.type === 'assistant' && message.context && (
+                  <ShowAutoDebugging context={message.context} />
                 )}
 							</div>
 						</div>
@@ -100,6 +85,37 @@ export default function Chat({ messages: chatMessages, onSendMessage }: ChatProp
 			</div>
 		</div>
 	);
+}
+
+function ShowAutoDebugging({ context }: { context: AutoDebugContext }): React.ReactNode {
+  const { history } = context;
+  const lastHistoryItem = history[history.length - 1];
+  const newCode = lastHistoryItem.code;
+
+  return <div>
+    <div>Count: {history.length}</div>
+    <CodeMirror
+      value={newCode}
+      height="600px"
+      extensions={[javascript({ jsx: true })]}
+      theme={monokaiDimmed}
+    />
+    <pre className="whitespace-pre-wrap">
+      {lastHistoryItem.result?.stdout}
+    </pre>
+    <pre className="whitespace-pre-wrap">
+      {lastHistoryItem.result?.stderr}
+    </pre>
+    <pre className="whitespace-pre-wrap">
+      {lastHistoryItem.analysis}
+    </pre>
+    <div>
+      {lastHistoryItem.status} - {lastHistoryItem.reason}
+    </div>
+    {/* <pre>
+      {JSON.stringify(lastHistoryItem, null, 2)}
+    </pre> */}
+  </div>;
 }
 
 function SendIcon(props: any) {
