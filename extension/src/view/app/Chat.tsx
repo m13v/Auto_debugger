@@ -33,7 +33,7 @@ export default function Chat({
 	// const [startDateTime, setStartDateTime] = useState<Date | null>(null);
 
 	useEffect(() => {
-		setCounter(0);
+		setCounter(() => 0);
 		const interval = setInterval(() => {
 			setCounter((prevCounter) => prevCounter + 0.1);
 		}, 100);
@@ -51,6 +51,8 @@ export default function Chat({
 			setInput("");
 
 			// setStartDateTime(new Date());
+
+			setCounter(() => 0);
 		},
 		[input, chatMessages, onSendMessage],
 	);
@@ -63,9 +65,11 @@ export default function Chat({
 			<div className="flex-1 overflow-auto p-4">
 				{chatMessages.map((message, index) => {
 					let lastHistoryItem: any;
+					let status: string = 'Incomplete';
 					if ("context" in message && message?.context?.history && message.context.history.length > 0) {
 						lastHistoryItem =
 							message.context.history[message.context.history.length - 1];
+						status = lastHistoryItem?.status ?? 'Incomplete';
 					}
 					// const timeDiff = startDateTime ? new Date().getTime() - startDateTime.getTime() : 0;
 					return (
@@ -89,9 +93,9 @@ export default function Chat({
 										<div className="flex items-center text-white mb-1">
 											{/* <span>Thinking [{timeDiff.toFixed(1)} sec]</span> */}
 											{counter > 0 && <span>Thinking [{counter.toFixed(1)} sec]</span>}
-											{lastHistoryItem && 'status' in lastHistoryItem && (
+											{status && (
 												<span className="ml-4">
-													Status: {lastHistoryItem.status}
+													Status: {status}
 												</span>
 											)}
 										</div>
@@ -176,7 +180,7 @@ function ShowAutoDebugging({
 			<div className="flex justify-between items-center mt-4">
 				<span className="text-white mx-4 flex-1 text-right">
 					Step:{" "}
-					{historyIndex < 0 ? history.length : history.length - historyIndex} of{" "}
+					{historyIndex < 0 ? history.length : (historyIndex + 1)} of{" "}
 					{history.length}
 				</span>
 				<div className="flex">
@@ -205,7 +209,7 @@ function ShowAutoDebugging({
 				{lastHistoryItem.result?.stderr}
 			</pre> */}
 
-			<pre className="whitespace-pre-wrap">{lastHistoryItem.plan}</pre>
+			{/* <pre className="whitespace-pre-wrap">{lastHistoryItem.plan}</pre> */}
 
 			{lastHistoryItem.result && (
 				<div

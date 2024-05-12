@@ -18,10 +18,15 @@ import {
 
 const GROQ_API_KEY = "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";
 const seed = 42;
+const maxSteps = 100;
 
 const groq = new Groq({
 	apiKey: GROQ_API_KEY,
 });
+
+// const fastModel = GroqModels.Llama3_8b;
+const fastModel = GroqModels.Llama3_70b;
+const slowModel = GroqModels.Llama3_70b;
 
 function printBanner(title: string) {
 	console.log(`\n\n${"=".repeat(20)} ${title} ${"=".repeat(20)}`);
@@ -186,7 +191,7 @@ And the characters in the sequence should be in incrementing alphabetical order.
 		};
 
 		let done = false;
-		while (!done && attempts < 10) {
+		while (!done && attempts < maxSteps) {
 			try {
 				attempts++;
 
@@ -259,6 +264,7 @@ And the characters in the sequence should be in incrementing alphabetical order.
 	async getTaskStatus(context: AutoDebugContext): Promise<boolean> {
 		const lastHistoryItem = context.history[context.history.length - 1];
 		const prompt = `Given the task and analysis, determine whether the code is complete and satisfies the acceptance criteria. If not, what needs to be done to complete the code?
+Do not gold plate, only meet the acceptance criteria. Be precise and concise.
 
 Must always call the "task_status" tool with your evaluation.
 May call "ask_user" tool to ask the user critical questions.
@@ -502,7 +508,8 @@ ${context.goal}`;
 			messages,
 			// model: "llama3-8b-8192",
 			// model: GroqModels.Llama3_8b,
-			model: GroqModels.Llama3_70b,
+			// model: GroqModels.Llama3_70b,
+			model: fastModel,
 			//
 			// Optional parameters
 			//
@@ -549,7 +556,8 @@ console.log(\`Test Case #N. Input: INPUTs. Expected Output: EXPECTED\`)
 console.log(callMyFunc(INPUTS))
 // ... for each test case  
 \`\`\`
-Also include any additional debugging console statements as needed.
+
+Include additional console statements throughout code used for debugging and understanding control flow.
 
 Assume the function must return a value if it is not a void function.
 
@@ -605,7 +613,8 @@ Only output the code. Follow the instructions above.
 			messages,
 			// model: "llama3-8b-8192",
 			// model: GroqModels.Llama3_8b,
-			model: GroqModels.Llama3_70b,
+			// model: GroqModels.Llama3_70b,
+			model: fastModel,
 			//
 			// Optional parameters
 			//
@@ -715,7 +724,8 @@ Only output the code. Follow the instructions above.
 		}
 
 		const prompt = `Analyze the results of executing the following code to implement the task.
-Did the code meet the acceptance criteria? If not, what went wrong? What worked and should be repeated? What did not work? Focus on identifying the issue(s) and possible root causes, if there are any. Think step by step. Start with observations before jumping to conclusions.
+Did the code meet the acceptance criteria? Do not gold plate, only meet the acceptance criteria. Be precise and concise.
+If not, what went wrong? What worked and should be repeated? What did not work? Focus on identifying the issue(s) and possible root causes, if there are any. Think step by step. Start with observations before jumping to conclusions.
 Do not output any code. Only output the analysis.
 
 Task:
@@ -752,7 +762,8 @@ ${lastProgram.result.stderr}
 				{ role: "user", content: prompt },
 			],
 			// model: "llama3-8b-8192",
-			model: GroqModels.Llama3_70b,
+			// model: GroqModels.Llama3_70b,
+			model: fastModel,
 			// model: GroqModels.Llama3_8b,
 			//
 			// Optional parameters
