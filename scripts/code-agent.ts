@@ -4,31 +4,38 @@ import dotenv from "dotenv";
 import { CompletionCreateParams } from "groq-sdk/resources/chat";
 dotenv.config();
 
-// import { Messenger } from 'vscode-messenger';
-// import * as vscode from 'vscode';
+import * as vscode from 'vscode';
 
-// export function activate(context: vscode.ExtensionContext) {
-//     const messenger = new Messenger({ debugLog: true });
+export class CodeAgent {
+  private _panel: vscode.WebviewPanel;
 
-//     // Assuming you have a way to reference or create a webview panel
-//     const webviewPanel = vscode.window.createWebviewPanel('viewType', 'Title', vscode.ViewColumn.One, {});
+  constructor(panel: vscode.WebviewPanel) {
+    this._panel = panel;
+    this.initializeMessageListener();
+  }
 
-//     // Register the webview panel with the messenger
-//     messenger.registerWebviewPanel(webviewPanel);
+  private initializeMessageListener() {
+    this._panel.webview.onDidReceiveMessage(
+      message => {
+        switch (message.command) {
+          case 'update':
+            this.handleUpdate(message.data);
+            break;
+          // Add more cases as needed
+          default:
+            console.log(`Unhandled message: ${message.command}`);
+        }
+      },
+      undefined, // You can specify a disposable array here if needed
+      [] // disposables
+    );
+  }
 
-//     // Example function to send a message
-//     function sendMessage() {
-//         // Define the message type and data
-//         const messageType = { method: 'doSomething' }; // Define this type in a common types file
-//         const messageData = { /* some data */ };
-
-//         // Send a notification to the webview
-//         messenger.sendNotification(messageType, { type: 'webview', webviewType: 'viewType' }, messageData);
-//     }
-
-//     // Add to subscriptions if needed
-//     context.subscriptions.push(webviewPanel);
-// }
+  private handleUpdate(data: any) {
+    console.log('Received update:', data);
+    // Process the data as needed
+  }
+}
 
 
 const groq = new Groq();
