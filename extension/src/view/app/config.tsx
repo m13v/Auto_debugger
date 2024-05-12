@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { type IConfig, type IUser, type ICommand, CommandAction } from "./model";
-import Chat from './Chat';
+import { type IConfig,
+  // type IUser, type ICommand, CommandAction
+ } from "./model";
+import Chat, { Message } from './Chat';
 
 interface IConfigProps {
   vscode: any;
@@ -18,8 +20,7 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
   //   return oldState || { config: initialData };
   // });
 
-  const [messages, setMessages] = useState<IUser[]>([]);
-
+  const [messages, _setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {

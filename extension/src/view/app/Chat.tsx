@@ -11,8 +11,20 @@ import { AvatarImage, AvatarFallback, Avatar } from "./components/ui/avatar"
 import { Button } from "./components/ui/button"
 import { Input } from "./components/ui/input"
 
+export type Message = UserMessage | AssistantMessage;
+
+type UserMessage = {
+  type: 'user';
+  text: string;
+}
+type AssistantMessage = {
+  type: 'assistant';
+  text: string;
+  code: string;
+}
+
 type ChatProps = {
-  messages: any[];
+  messages: Message[];
   onSendMessage: (message: string) => void;
 }
 
