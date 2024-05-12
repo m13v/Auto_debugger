@@ -1,7 +1,7 @@
 import * as React from "react";
 import { IConfig, IUser, ICommand, CommandAction } from "./model";
 import DummyChatComponent from './ChatComponent'; // Import the chat component
-// import Layout from "./layout.jsx";
+// import Component from "./component"; // Import
 
 interface IConfigProps {
   vscode: any;
@@ -122,7 +122,7 @@ export default class Config extends React.Component<
           onClick={() => this.saveConfig()}
         />
         <DummyChatComponent /> {/* Render the chat component here */}
-        {/* <Layout />, */}
+        {/* <Component />, */}
       </React.Fragment>
     );
   }
