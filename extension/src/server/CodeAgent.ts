@@ -43,9 +43,9 @@ export class CodeAgent {
   constructor({ postMessage }: any) {
 	this.postMessage = postMessage;
 
-	setInterval(() => {
-		this.sendMessage({ command: 'ping', data: { hello: 'world' } });
-	}, 1000)
+	// setInterval(() => {
+	// 	this.sendMessage({ command: 'ping', data: { hello: 'world' } });
+	// }, 1000)
   }
 
   sendMessage(message: any) {

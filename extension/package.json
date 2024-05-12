@@ -29,8 +29,8 @@
     "commands": [
       {
         "command": "extension.viewconfig",
-        "title": "Display config JSON.",
-        "category": "Webview React"
+        "title": "Open Chat",
+        "category": "AutoDebugger"
       }
     ]
   },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { type IConfig, type IUser, type ICommand, CommandAction } from "./model";
 import Chat from './Chat';
@@ -18,6 +18,9 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
   //   return oldState || { config: initialData };
   // });
 
+  const [messages, setMessages] = useState<IUser[]>([]);
+
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       console.log('Webview received message:', event.data);
@@ -34,6 +37,13 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
+  }, [vscode]);
+
+  const onSendMessage = useCallback((message: string) => {
+    vscode.postMessage({
+      command: 'message',
+      text: message
+    });
   }, [vscode]);
 
   /*
@@ -53,7 +63,7 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
 
   return (
     <React.Fragment>
-      <Chat />
+      <Chat messages={messages} onSendMessage={onSendMessage} />
     </React.Fragment>
   );
 };
