@@ -1,11 +1,11 @@
 {
 	"compilerOptions": {
+		"esModuleInterop": true,
+		"jsx": "react",
 		"module": "commonjs",
 		"target": "es6",
 		"outDir": "out",
-		"lib": [
-			"es6"
-		],
+		"lib": ["es2015", "dom", "es6", "dom.iterable", "scripthost"],
 		"sourceMap": true,
 		"rootDir": "src",
 		"strict": true   /* enable all strict type-checking options */

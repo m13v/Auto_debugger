@@ -16,25 +16,10 @@ export function activate(context: vscode.ExtensionContext) {
   let disposable = vscode.commands.registerCommand(
     "extension.viewconfig",
     () => {
-      let openDialogOptions: vscode.OpenDialogOptions = {
-        canSelectFiles: true,
-        canSelectFolders: false,
-        canSelectMany: false,
-        filters: {
-          Json: ["json"]
-        }
-      };
+      const configPath = vscode.Uri.file(context.extensionPath + '/config.json');
 
-      vscode.window
-        .showOpenDialog(openDialogOptions)
-        .then(async (uri: vscode.Uri[] | undefined) => {
-          if (uri && uri.length > 0) {
-            const view = new ViewLoader(uri[0], context.extensionPath);
-          } else {
-            vscode.window.showErrorMessage("No valid file selected!");
-            return;
-          }
-        });
+      // Create a new instance of ViewLoader with the config file URI and extension path
+      const viewLoader = new ViewLoader(configPath, context.extensionPath);
     }
   );
 
