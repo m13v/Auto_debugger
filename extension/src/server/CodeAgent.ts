@@ -4,68 +4,10 @@ import type * as vscode from "vscode";
 import Groq from "groq-sdk";
 // import dotenv from "dotenv";
 import type { CompletionCreateParams } from "groq-sdk/resources/chat";
+import type { Message } from "@/Chat";
 // dotenv.config();
 
 const GROQ_API_KEY = "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"
-
-// console.log('process.env.GROQ_API_KEY', process.env.GROQ_API_KEY);
-
-type postMessage = vscode.WebviewPanel["webview"]["postMessage"]
-
-export class CodeAgent {
-	/*
-  private _panel: vscode.WebviewPanel;
-
-  constructor(panel: vscode.WebviewPanel) {
-    this._panel = panel;
-    this.initializeMessageListener();
-  }
-
-  private initializeMessageListener() {
-    this._panel.webview.onDidReceiveMessage(
-      message => {
-        switch (message.command) {
-          case 'update':
-            this.handleUpdate(message.data);
-            break;
-          // Add more cases as needed
-          default:
-            console.log(`Unhandled message: ${message.command}`);
-        }
-      },
-      undefined, // You can specify a disposable array here if needed
-      [] // disposables
-    );
-  }
-
-  private handleUpdate(data: any) {
-    console.log('Received update:', data);
-    // Process the data as needed
-  }
-  */
-
-	private postMessage: postMessage; // TODO: types
-
-	constructor({ postMessage }: { postMessage: postMessage }) {
-		this.postMessage = postMessage;
-	}
-
-	sendMessage(message: any) {
-		console.log("CodeAgent sending message:", message);
-		this.postMessage(message);
-	}
-
-	public onReceiveMessage(message: any) {
-		console.log("CodeAgent received message:", message);
-
-    if (message.command === 'message') {
-      this.sendMessage({
-        command: 'message',
-        text: `${message.text} back!`
-      });
-    }
-	}
-}
 
 const groq = new Groq({
   apiKey: GROQ_API_KEY,
@@ -76,24 +18,94 @@ enum GroqModels {
 	Llama3_70b = "llama3-70b-8192",
 }
 
-interface AcceptanceCriteria {
-	criteria: string;
-	code: string;
-}
+// console.log('process.env.GROQ_API_KEY', process.env.GROQ_API_KEY);
+
+type postMessage = vscode.WebviewPanel["webview"]["postMessage"]
+
+// interface AcceptanceCriteria {
+// 	criteria: string;
+// 	code: string;
+// }
+
+type ExecutionResult = {
+	returnValue: any;
+	stdout: string;
+	stderr: string;
+};
 
 interface Program {
 	code: string;
 	result?: ExecutionResult;
 	analysis?: string;
 	status?: "complete" | "incomplete";
-	reason?: string;
+	/**
+   * Reason for status
+   */
+  reason?: string;
 }
 
 interface Context {
 	goal: string;
 	scratchpad: string;
-	acceptanceCriterias: AcceptanceCriteria[];
+	// acceptanceCriterias: AcceptanceCriteria[];
 	history: Program[];
+}
+
+export class CodeAgent {
+	private postMessage: postMessage;
+  private messages: Message[] = [];
+
+  private persona = "You are an expert software engineer with knowledge of debugging best practices.";
+
+	constructor({ postMessage }: { postMessage: postMessage }) {
+		this.postMessage = postMessage;
+	}
+
+	sendMessage(message: any) {
+		console.log("CodeAgent sending message:", message);
+		this.postMessage(message);
+	}
+
+	public async onReceiveMessage(message: any) {
+		console.log("CodeAgent received message:", message);
+
+    switch (message.command) {
+      case 'message': {
+        const userMessage: Message = { type: 'user', text: message.text };
+        this.messages.push(userMessage);
+
+        // this.sendMessage({
+        //   command: 'message',
+        //   text: `${message.text} back!`
+        // });
+
+        const prompt = message.text;
+
+        const chatCompletion = await groq.chat.completions.create({
+          messages: [
+            {
+              role: "system",
+              content: this.persona,
+            },
+            { role: "user", content: prompt },
+          ],
+          model: GroqModels.Llama3_8b,
+          temperature: 0.5,
+          max_tokens: 1024,
+          top_p: 1,
+        });
+
+        const res = chatCompletion.choices[0].message.content;
+
+        this.sendMessage({
+          command: 'message',
+          text: res
+        });
+
+        break;
+      }
+    }
+	}
 }
 
 async function main() {
@@ -449,12 +461,6 @@ Task: ${context.goal}`;
 	// const result = await promise;
 	// console.log(result);
 }
-
-type ExecutionResult = {
-	returnValue: any;
-	stdout: string;
-	stderr: string;
-};
 
 function consoleArgsToString(arg: any): string {
 	if (typeof arg === "string") {

@@ -1,5 +1,9 @@
 import React, { useCallback, useState } from "react";
 import { AvatarImage, AvatarFallback, Avatar } from "./components/ui/avatar";
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
+import { monokaiDimmed } from '@uiw/codemirror-theme-monokai-dimmed';
+
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 
@@ -60,6 +64,14 @@ export default function Chat({ messages: chatMessages, onSendMessage }: ChatProp
 								} p-1 text-white`}
 							>
 								<p>{message.text}</p>
+
+                {'code' in message && (
+                  <CodeMirror value={message.code} height="200px"
+                  extensions={[javascript({ jsx: true })]}
+                  theme={monokaiDimmed}
+                  // onChange={onChange}
+                  />
+                )}
 							</div>
 						</div>
 					</div>
