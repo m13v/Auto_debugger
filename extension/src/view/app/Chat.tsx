@@ -1,8 +1,9 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { AvatarImage, AvatarFallback, Avatar } from "./components/ui/avatar";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { monokaiDimmed } from "@uiw/codemirror-theme-monokai-dimmed";
+import { EditorView } from '@codemirror/view';
 
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
@@ -13,12 +14,30 @@ type ChatProps = {
 	onSendMessage: (message: string) => void;
 };
 
+const customFontSizeTheme = EditorView.theme({
+  "&": {
+    fontSize: "12px", // Set your desired font size here
+  },
+  ".cm-content": {
+    fontFamily: "monospace", // Optional: Set the font family if needed
+  }
+});
+
 export default function Chat({
 	messages: chatMessages,
 	onSendMessage,
 }: ChatProps) {
 	const [input, setInput] = useState<string>("");
 	// const [chatMessages, setChatMessages] = useState<Message[]>(messages);
+  const [counter, setCounter] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCounter(prevCounter => prevCounter + 0.1);
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, []);
 
 	const onSubmit = useCallback(
 		(event: React.FormEvent<HTMLFormElement>) => {
@@ -38,7 +57,12 @@ export default function Chat({
 			{/* Changed background color */}
 			{/* Header and other components remain unchanged */}
 			<div className="flex-1 overflow-auto p-4">
-				{chatMessages.map((message, index) => (
+				{chatMessages.map((message, index) => {
+          let lastHistoryItem;
+          if ('context' in message) {
+            lastHistoryItem = message?.context?.history[message.context.history.length - 1];
+          }
+          return (
 					<div
 						key={index}
 						className={`flex ${
@@ -47,16 +71,23 @@ export default function Chat({
 					>
 						{message.type === "assistant" && (
 							<>
-								{/* <div className="status-display mb-1 text-sm text-gray-500">
-                  {message.status ? `Status: ${message.status}` : "No status"}
-                </div> */}
 								<Avatar className="h-8 w-8">
 									<AvatarImage alt="Assistant" src="/avatar.jpg" />
 									<AvatarFallback>AI</AvatarFallback>
 								</Avatar>
 							</>
-						)}
+              )}
 						<div className="max-w-[75%] space-y-2">
+                  {message.type === "assistant" && (
+                  <>
+                    <div className="flex items-center text-white mb-1">
+                      <span>Thinking [{counter.toFixed(1)} sec]</span>
+                      {lastHistoryItem && (
+                        <span className="ml-4">Status: {lastHistoryItem.status}</span>
+                      )}
+                    </div>
+                    </>)}
+
 							<div
 								className={`rounded-lg ${
 									message.type === "user" ? "bg-blue-500" : "bg-gray-900"
@@ -70,7 +101,7 @@ export default function Chat({
 							</div>
 						</div>
 					</div>
-				))}
+				)})}
 			</div>
 			<div className="border-t border-gray-200 bg-gray-900 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
 				{" "}
@@ -119,32 +150,33 @@ function ShowAutoDebugging({
 
 	return (
 		<div>
-			<div>Count: {history.length}</div>
 			<CodeMirror
 				value={newCode}
 				height="600px"
-				extensions={[javascript({ jsx: true })]}
+				extensions={[javascript({ jsx: true }), EditorView.lineWrapping, customFontSizeTheme]}
 				theme={monokaiDimmed}
 			/>
 
-			<div className="flex justify-between items-center mt-4">
-				<label htmlFor="history-slider" className="text-white">
-					Step through history: {historyIndex < 0 ? history.length - 1 : historyIndex}
-				</label>
-				<input
-					id="history-slider"
-					type="range"
-					min="0"
-					max={history.length - 1}
-					value={historyIndex < 0 ? history.length - 1 : historyIndex}
-					onChange={(e) => {
-						console.log(e.target.value);
-						const rawValue = Number.parseInt(e.target.value)
-						setHistoryIndex(rawValue === history.length - 1 ? -1 : rawValue);
-					}}
-					className="w-full max-w-md"
-				/>
-			</div>
+      <div className="flex justify-between items-center mt-4">
+        <span className="text-white mx-4 flex-1 text-right">
+          Step: {historyIndex < 0 ? history.length : history.length - historyIndex} of {history.length}
+        </span>
+        <div className="flex">
+          <button
+            onClick={() => setHistoryIndex(prev => Math.max(prev - 1, 0))} // Decrement index, stop at 0
+            className="bg-blue-300 hover:bg-blue-400 text-gray-800 font-bold py-1 px-2 rounded-l"
+            style={{ marginRight: "8px" }}
+          >
+            &lt;
+          </button>
+          <button
+            onClick={() => setHistoryIndex(prev => Math.min(prev + 1, history.length - 1))} // Increment index, stop at max index
+            className="bg-blue-300 hover:bg-blue-400 text-gray-800 font-bold py-1 px-2 rounded-r"
+          >
+            &gt;
+          </button>
+        </div>
+      </div>
 
 			{/* <pre className="whitespace-pre-wrap">
 				{lastHistoryItem.result?.stdout}
@@ -156,22 +188,22 @@ function ShowAutoDebugging({
 			<pre className="whitespace-pre-wrap">{lastHistoryItem.plan}</pre>
 
 			{lastHistoryItem.result && (
-				<div className="mt-2 p-2 bg-gray-800 text-white rounded">
-					<p>
-						<strong>Output:</strong>
-						<pre className="whitespace-pre-wrap">
-							{lastHistoryItem.result.stdout}
-						</pre>
-					</p>
-					{lastHistoryItem.result.stderr && (
-						<p>
-							<strong>Error:</strong>
-							<pre className="whitespace-pre-wrap">
-								{lastHistoryItem.result.stderr}
-							</pre>
-						</p>
-					)}
-				</div>
+				<div className="mt-2 p-2 bg-gray-800 text-white rounded" style={{ fontSize: '12px' }}>
+        <p>
+          <strong>Terminal:</strong>
+          <pre className="whitespace-pre-wrap" style={{ fontWeight: 'normal' }}>
+            {lastHistoryItem.result.stdout}
+          </pre>
+        </p>
+        {lastHistoryItem.result.stderr && (
+          <p>
+            <strong>Errors:</strong>
+            <pre className="whitespace-pre-wrap" style={{ fontWeight: 'normal' }}>
+              {lastHistoryItem.result.stderr}
+            </pre>
+          </p>
+        )}
+      </div>
 			)}
 
 			<pre className="whitespace-pre-wrap">{lastHistoryItem.analysis}</pre>
