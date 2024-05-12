@@ -5,7 +5,7 @@ import { javascript } from "@codemirror/lang-javascript";
 import { monokaiDimmed } from "@uiw/codemirror-theme-monokai-dimmed";
 
 import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
+import { Textarea } from "./components/ui/textarea";
 import type { AutoDebugContext, Message, UserMessage } from "./model";
 
 type ChatProps = {
@@ -62,7 +62,7 @@ export default function Chat({
 									message.type === "user" ? "bg-blue-500" : "bg-gray-900"
 								} p-1 text-white`}
 							>
-								<p>{message.text}</p>
+								<pre className="whitespace-pre-wrap">{message.text}</pre>
 
 								{message.type === "assistant" && message.context && (
 									<ShowAutoDebugging context={message.context} />
@@ -77,10 +77,19 @@ export default function Chat({
 				{/* Adjusted footer background */}
 				<form onSubmit={onSubmit}>
 					<div className="flex items-center gap-2">
+						{/*
 						<Input
 							className="flex-1 bg-[#1e1e1e] focus:outline-none text-white" // Set background color to match the chat area
 							placeholder="Type your message..."
 							type="text"
+							value={input}
+							onChange={(e) => setInput(e.target.value)}
+						/>
+						*/}
+						<Textarea
+							className="flex-1 bg-[#1e1e1e] focus:outline-none text-white" // Set background color to match the chat area
+							placeholder="Type your message..."
+							// type="text"
 							value={input}
 							onChange={(e) => setInput(e.target.value)}
 						/>
@@ -143,6 +152,8 @@ function ShowAutoDebugging({
 			<pre className="whitespace-pre-wrap">
 				{lastHistoryItem.result?.stderr}
 			</pre> */}
+
+			<pre className="whitespace-pre-wrap">{lastHistoryItem.plan}</pre>
 
 			{lastHistoryItem.result && (
 				<div className="mt-2 p-2 bg-gray-800 text-white rounded">

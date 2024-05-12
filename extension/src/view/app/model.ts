@@ -46,6 +46,7 @@ export type ExecutionResult = {
 };
 
 export interface Program {
+	plan: string;
 	code: string;
 	result?: ExecutionResult;
 	analysis?: string;
@@ -58,7 +59,7 @@ export interface Program {
 
 export interface AutoDebugContext {
 	goal: string;
-	scratchpad: string;
+	// scratchpad: string;
 	// acceptanceCriterias: AcceptanceCriteria[];
 	history: Program[];
 }
