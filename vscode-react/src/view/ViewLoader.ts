@@ -35,6 +35,8 @@ export default class ViewLoader {
     ////////////////////////////////////////////////////////////////
       this._panel.webview.onDidReceiveMessage(
         message => {
+          console.log('Extension received message', message)
+
           if (message.command) {
             // Handling messages with 'command'
             switch (message.command) {
@@ -59,7 +61,9 @@ export default class ViewLoader {
 
       this._panel.webview.postMessage({
         command: 'update',
-        data: { /* some data */ }
+        data: {
+          "hello": "extension",
+         }
       });
 
     ////////////////////////////////////////////////////////////////

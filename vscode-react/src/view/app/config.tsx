@@ -27,6 +27,12 @@ export default class Config extends React.Component<
     } else {
       this.state = { config: initialData };
     }
+
+    // Handle the message inside the webview
+    window.addEventListener('message', event => {
+      console.log('Webview received message:', event.data);
+    })
+
   }
 
   private defineState(newSate: IConfigState) {
