@@ -14,11 +14,14 @@
   "license": "MIT",
   "dependencies": {
     "dotenv": "^16.4.5",
-    "groq-sdk": "^0.3.3"
+    "groq-sdk": "^0.3.3",
+    "vscode-messenger": "^0.4.5",
+    "vscode-messenger-webview": "^0.4.5"
   },
   "devDependencies": {
     "@types/node": "^20.12.11",
     "tsx": "^4.10.0",
     "typescript": "^5.4.5"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }
