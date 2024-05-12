@@ -85,6 +85,8 @@ export class CodeAgent {
 	async codeGen(_goal: string) {
 		// FIXME
 		const goal = `Write a function which can check whether the following string is valid or not.
+- "a" => true
+- "ab" => true
 - "abc" => true
 - "abd" => false
 - "aabbcc" => true
@@ -616,11 +618,6 @@ Code:
 ${lastProgram.code}
 \`\`\`
 
-Return Value:
-\`\`\`
-${lastProgram.result.returnValue}
-\`\`\`
-
 Stdout:
 \`\`\`
 ${lastProgram.result.stdout}
@@ -631,6 +628,10 @@ Stderr:
 ${lastProgram.result.stderr}
 \`\`\`
 `;
+	// Return Value:
+	// \`\`\`
+	// ${lastProgram.result.returnValue}
+	// \`\`\`
 
 	console.log(prompt);
 

@@ -103,7 +103,9 @@ function ShowAutoDebugging({
 	context,
 }: { context: AutoDebugContext }): React.ReactNode {
 	const { history } = context;
-	const lastHistoryItem = history[history.length - 1];
+	const [historyIndex, setHistoryIndex] = useState<number>(-1);
+	// const lastHistoryItem = history[history.length - 1];
+	const lastHistoryItem = history[historyIndex < 0 ? history.length - 1 : historyIndex];
 	const newCode = lastHistoryItem.code;
 
 	return (
@@ -115,21 +117,47 @@ function ShowAutoDebugging({
 				extensions={[javascript({ jsx: true })]}
 				theme={monokaiDimmed}
 			/>
-			<pre className="whitespace-pre-wrap">
+
+			<div className="flex justify-between items-center mt-4">
+				<label htmlFor="history-slider" className="text-white">
+					Step through history: {historyIndex < 0 ? history.length - 1 : historyIndex}
+				</label>
+				<input
+					id="history-slider"
+					type="range"
+					min="0"
+					max={history.length - 1}
+					value={historyIndex < 0 ? history.length - 1 : historyIndex}
+					onChange={(e) => {
+						console.log(e.target.value);
+						const rawValue = Number.parseInt(e.target.value)
+						setHistoryIndex(rawValue === history.length - 1 ? -1 : rawValue);
+					}}
+					className="w-full max-w-md"
+				/>
+			</div>
+
+			{/* <pre className="whitespace-pre-wrap">
 				{lastHistoryItem.result?.stdout}
 			</pre>
 			<pre className="whitespace-pre-wrap">
 				{lastHistoryItem.result?.stderr}
-			</pre>
+			</pre> */}
 
 			{lastHistoryItem.result && (
 				<div className="mt-2 p-2 bg-gray-800 text-white rounded">
 					<p>
-						<strong>Output:</strong> {lastHistoryItem.result.stdout}
+						<strong>Output:</strong>
+						<pre className="whitespace-pre-wrap">
+							{lastHistoryItem.result.stdout}
+						</pre>
 					</p>
 					{lastHistoryItem.result.stderr && (
 						<p>
-							<strong>Error:</strong> {lastHistoryItem.result.stderr}
+							<strong>Error:</strong>
+							<pre className="whitespace-pre-wrap">
+								{lastHistoryItem.result.stderr}
+							</pre>
 						</p>
 					)}
 				</div>
