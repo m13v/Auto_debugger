@@ -4,6 +4,7 @@
         "paths": {
             "@/components/*": ["./components/*"],
             "@/lib/*": ["./lib/*"],
+            "@/lib/utils": ["./lib/utils"],
             "@/*": ["./*"]
         },
         "allowSyntheticDefaultImports": true,

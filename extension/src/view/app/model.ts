@@ -80,3 +80,73 @@ export type AssistantMessage = {
 	context?: AutoDebugContext;
 };
 
+/*
+type AssistantMessage = {
+	type: "assistant";
+  text: string;
+  code: string;
+	result?: ExecutionResult;
+  analysis?: string;
+  status?: "complete" | "incomplete";
+  // Reason for status
+  reason?: string;
+}
+
+type AssistantContext = {
+  goal: string;
+  scratchpad: string;
+  history: AssistantMessage[];
+  currentMessage?: AssistantMessage;
+}
+
+export const dummyAssistantContext: AssistantContext = {
+  goal: "Complete the project documentation",
+  scratchpad: "Remember to update the API section with the latest changes.",
+  history: [
+    {
+      type: "assistant",
+      text: "Reminder to review the deployment process.",
+      code: "REM003",
+      status: "incomplete",
+      reason: "Pending review from the team lead",
+      result: {
+        returnValue: null,
+        stdout: "Deployment process needs to be reviewed by the team lead.",
+        stderr: ""
+      }
+    },
+    {
+      type: "assistant",
+      text: "Here's the summary of the last meeting.",
+      code: "SUM001",
+      analysis: "Positive progress in the last sprint.",
+      status: "complete"
+    },
+    {
+      type: "assistant",
+      text: "Draft for the upcoming presentation.",
+      code: "DFT002",
+      analysis: "Needs more detailed diagrams.",
+      status: "incomplete",
+      reason: "Lack of technical details",
+      result: {
+        returnValue: null,
+        stdout: "Draft requires additional diagrams to effectively communicate the concepts.",
+        stderr: "Missing data on recent market trends."
+      }
+    }
+  ],
+  currentMessage: {
+    type: "assistant",
+    text: "Reminder to review the deployment process.",
+    code: "REM003",
+    status: "incomplete",
+    reason: "Pending review from the team lead",
+    result: {
+      returnValue: "ok",
+      stdout: "Please ensure all team leads have reviewed the deployment steps.",
+      stderr: ""
+    }
+  }
+};
+*/
