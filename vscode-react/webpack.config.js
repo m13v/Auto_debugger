@@ -13,7 +13,7 @@ module.exports = {
   // devtool: "eval-source-map",
   devtool: "inline-source-map",
   resolve: {
-    extensions: [".js", ".ts", ".tsx", ".json", ".css"]
+    extensions: [".js", "jsx", ".ts", ".tsx", ".json"]
   },
   module: {
     rules: [
