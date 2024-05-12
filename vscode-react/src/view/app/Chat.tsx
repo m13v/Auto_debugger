@@ -7,31 +7,9 @@ import React from "react"
 // import { AvatarImage, AvatarFallback, Avatar } from "@/components/ui/avatar"
 // import { Button } from "@/components/ui/button"
 // import { Input } from "@/components/ui/input"
-
-function AvatarImage(props: any) {
-  // return <img {...props} />
-  return null;
-}
-
-function AvatarFallback(props: any) {
-  // return <div {...props} />
-  return null;
-}
-
-function Avatar(props: any) {
-  // return <div {...props} />
-  return null;
-}
-
-function Button(props: any) {
-  // return <button {...props} />
-  return null;
-}
-
-function Input(props: any) {
-  // return <input {...props} />
-  return null;
-}
+import { AvatarImage, AvatarFallback, Avatar } from "./components/ui/avatar"
+import { Button } from "./components/ui/button"
+import { Input } from "./components/ui/input"
 
 export default function Chat() {
   return (
