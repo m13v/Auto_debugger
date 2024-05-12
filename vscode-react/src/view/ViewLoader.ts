@@ -2,7 +2,10 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 
-import { IConfig, ICommand, CommandAction } from "./app/model";
+import { IConfig, ICommand, CommandAction, IMessage } from "./app/model";
+
+// import { Messenger } from 'vscode-messenger-webview';
+
 
 export default class ViewLoader {
   private readonly _panel: vscode.WebviewPanel | undefined;
@@ -12,6 +15,7 @@ export default class ViewLoader {
   constructor(fileUri: vscode.Uri, extensionPath: string) {
     this._extensionPath = extensionPath;
 
+    
     let config = this.getFileContent(fileUri);
     if (config) {
       this._panel = vscode.window.createWebviewPanel(
@@ -28,18 +32,38 @@ export default class ViewLoader {
       );
 
       this._panel.webview.html = this.getWebviewContent(config);
-
+    ////////////////////////////////////////////////////////////////
       this._panel.webview.onDidReceiveMessage(
-        (command: ICommand) => {
-          switch (command.action) {
-            case CommandAction.Save:
-              this.saveFileContent(fileUri, command.content);
-              return;
+        message => {
+          if (message.command) {
+            // Handling messages with 'command'
+            switch (message.command) {
+              case 'doSomething':
+                vscode.window.showErrorMessage(message.text);
+                return;
+                // Handle other messages or commands
+            }
+          } else if (message.action) {
+            // Handling messages with 'action' (assuming ICommand interface)
+            switch (message.action) {
+              case CommandAction.Save:
+                this.saveFileContent(message.fileUri, message.content);
+                break;
+              // Handle other actions
+            }
           }
         },
         undefined,
         this._disposables
       );
+
+      this._panel.webview.postMessage({
+        command: 'update',
+        data: { /* some data */ }
+      });
+
+    ////////////////////////////////////////////////////////////////
+
     }
   }
 

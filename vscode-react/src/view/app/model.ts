@@ -17,3 +17,8 @@ export interface ICommand {
 export enum CommandAction {
   Save
 }
+
+export interface IMessage {
+  type: string;
+  content: any;
+}

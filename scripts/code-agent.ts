@@ -4,6 +4,33 @@ import dotenv from "dotenv";
 import { CompletionCreateParams } from "groq-sdk/resources/chat";
 dotenv.config();
 
+// import { Messenger } from 'vscode-messenger';
+// import * as vscode from 'vscode';
+
+// export function activate(context: vscode.ExtensionContext) {
+//     const messenger = new Messenger({ debugLog: true });
+
+//     // Assuming you have a way to reference or create a webview panel
+//     const webviewPanel = vscode.window.createWebviewPanel('viewType', 'Title', vscode.ViewColumn.One, {});
+
+//     // Register the webview panel with the messenger
+//     messenger.registerWebviewPanel(webviewPanel);
+
+//     // Example function to send a message
+//     function sendMessage() {
+//         // Define the message type and data
+//         const messageType = { method: 'doSomething' }; // Define this type in a common types file
+//         const messageData = { /* some data */ };
+
+//         // Send a notification to the webview
+//         messenger.sendNotification(messageType, { type: 'webview', webviewType: 'viewType' }, messageData);
+//     }
+
+//     // Add to subscriptions if needed
+//     context.subscriptions.push(webviewPanel);
+// }
+
+
 const groq = new Groq();
 
 enum GroqModels {
