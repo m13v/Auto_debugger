@@ -15,8 +15,6 @@ export default class ViewLoader {
   constructor(fileUri: vscode.Uri, extensionPath: string) {
     this._extensionPath = extensionPath;
 
-    console.log('EXTENSION?!?!??!!?')
-
     let config = this.getFileContent(fileUri);
     if (config) {
       this._panel = vscode.window.createWebviewPanel(
@@ -37,7 +35,7 @@ export default class ViewLoader {
       this._panel.webview.onDidReceiveMessage(
         message => {
           console.log('Extension received message', message)
-          codeAgent.receiveMessage(message);
+          codeAgent.onReceiveMessage(message);
 
           if (message.command) {
             // Handling messages with 'command'

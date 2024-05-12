@@ -20,16 +20,23 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
   //   return oldState || { config: initialData };
   // });
 
-  const [messages, _setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       console.log('Webview received message:', event.data);
 
-      vscode.postMessage({
-        command: 'pong',
-        text: 'Pong from webview'
-      });
+      if (event.data.command === 'message') {
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { type: 'assistant', text: event.data.text, code: '' }
+        ]);
+      }
+
+      // vscode.postMessage({
+      //   command: 'pong',
+      //   text: 'Pong from webview'
+      // });
     };
 
     window.addEventListener('message', handleMessage);
@@ -41,6 +48,11 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
   }, [vscode]);
 
   const onSendMessage = useCallback((message: string) => {
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { type: 'user', text: message }
+    ]);
+
     vscode.postMessage({
       command: 'message',
       text: message
