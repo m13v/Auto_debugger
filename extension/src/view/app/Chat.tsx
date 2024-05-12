@@ -13,11 +13,89 @@ type UserMessage = {
 	type: "user";
 	text: string;
 };
+
+type ExecutionResult = {
+	returnValue: any;
+	stdout: string;
+	stderr: string;
+};
+
 type AssistantMessage = {
 	type: "assistant";
-	text: string;
-	code: string;
+  text: string;
+  code: string;
+	result?: ExecutionResult;
+  analysis?: string;
+  status?: "complete" | "incomplete";
+  /**
+   * Reason for status
+   */
+  reason?: string;
+}
+
+type AssistantContext = {
+  goal: string;
+  scratchpad: string;
+  history: AssistantMessage[];
+  currentMessage?: AssistantMessage;
+}
+
+export const dummyAssistantContext: AssistantContext = {
+  goal: "Complete the project documentation",
+  scratchpad: "Remember to update the API section with the latest changes.",
+  history: [
+    {
+      type: "assistant",
+      text: "Reminder to review the deployment process.",
+      code: "REM003",
+      status: "incomplete",
+      reason: "Pending review from the team lead",
+      result: {
+        returnValue: null,
+        stdout: "Deployment process needs to be reviewed by the team lead.",
+        stderr: ""
+      }
+    },
+    {
+      type: "assistant",
+      text: "Here's the summary of the last meeting.",
+      code: "SUM001",
+      analysis: "Positive progress in the last sprint.",
+      status: "complete"
+    },
+    {
+      type: "assistant",
+      text: "Draft for the upcoming presentation.",
+      code: "DFT002",
+      analysis: "Needs more detailed diagrams.",
+      status: "incomplete",
+      reason: "Lack of technical details",
+      result: {
+        returnValue: null,
+        stdout: "Draft requires additional diagrams to effectively communicate the concepts.",
+        stderr: "Missing data on recent market trends."
+      }
+    }
+  ],
+  currentMessage: {
+    type: "assistant",
+    text: "Reminder to review the deployment process.",
+    code: "REM003",
+    status: "incomplete",
+    reason: "Pending review from the team lead",
+    result: {
+      returnValue: "ok",
+      stdout: "Please ensure all team leads have reviewed the deployment steps.",
+      stderr: ""
+    }
+  }
 };
+
+// type AssistantMessage = {
+// 	type: "assistant";
+// 	text: string;
+// 	code: string;
+// };
 
 type ChatProps = {
 	messages: Message[];
@@ -41,7 +119,7 @@ export default function Chat({ messages: chatMessages, onSendMessage }: ChatProp
 	);
 
 	return (
-		<div className="flex h-screen w-full flex-col">
+		<div className="flex h-screen w-full flex-col bg-[#1e1e1e]"> {/* Changed background color */}
 			{/* Header and other components remain unchanged */}
 			<div className="flex-1 overflow-auto p-4">
 				{chatMessages.map((message, index) => (
@@ -49,14 +127,19 @@ export default function Chat({ messages: chatMessages, onSendMessage }: ChatProp
 						key={index}
 						className={`flex ${
 							message.type === "user" ? "justify-end" : "items-start"
-						} gap-3 mb-4`}
-					>
-						{message.type === "assistant" && (
-							<Avatar className="h-8 w-8">
-								<AvatarImage alt="Assistant" src="/avatar.jpg" />
-								<AvatarFallback>AI</AvatarFallback>
-							</Avatar>
-						)}
+						} gap-3 mb-2`} {/* Reduced margin-bottom */}
+            >
+            {message.type === "assistant" && (
+              <>
+                <div className="status-display mb-1 text-sm text-gray-500">
+                  {message.status ? `Status: ${message.status}` : "No status"}
+                </div>
+                <Avatar className="h-8 w-8">
+                  <AvatarImage alt="Assistant" src="/avatar.jpg" />
+                  <AvatarFallback>AI</AvatarFallback>
+                </Avatar>
+              </>
+            )}
 						<div className="max-w-[75%] space-y-2">
 							<div
 								className={`rounded-lg ${
@@ -66,22 +149,32 @@ export default function Chat({ messages: chatMessages, onSendMessage }: ChatProp
 								<p>{message.text}</p>
 
                 {'code' in message && (
-                  <CodeMirror value={message.code} height="200px"
-                  extensions={[javascript({ jsx: true })]}
-                  theme={monokaiDimmed}
-                  // onChange={onChange}
-                  />
+                  <>
+                    <CodeMirror value={message.code} height="200px"
+                      extensions={[javascript({ jsx: true })]}
+                      theme={monokaiDimmed}
+                    // onChange={onChange}
+                    />
+                    {'result' in message && (
+                      <div className="mt-2 p-2 bg-gray-800 text-white rounded">
+                        <p><strong>Output:</strong> {message.result.stdout}</p>
+                        {message.result.stderr && (
+                          <p><strong>Error:</strong> {message.result.stderr}</p>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
 							</div>
 						</div>
 					</div>
 				))}
 			</div>
-			<div className="border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
+			<div className="border-t border-gray-200 bg-gray-900 px-4 py-3 dark:border-gray-800 dark:bg-gray-950"> {/* Adjusted footer background */}
 				<form onSubmit={onSubmit}>
 					<div className="flex items-center gap-2">
 						<Input
-							className="flex-1 bg-transparent focus:outline-none"
+              className="flex-1 bg-[#1e1e1e] focus:outline-none text-white" // Set background color to match the chat area
 							placeholder="Type your message..."
 							type="text"
 							value={input}

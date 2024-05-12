@@ -138,7 +138,7 @@ A string is valid if it has the same number of characters repeated in a sequence
 And the characters in the sequence should be in increasing order.
 `,
 		scratchpad: "",
-		acceptanceCriterias: [],
+		// acceptanceCriterias: [],
 		history: [],
 	};
 
