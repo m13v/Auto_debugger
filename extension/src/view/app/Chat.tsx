@@ -3,7 +3,7 @@
  * @see https://v0.dev/t/ACze857k4tw
  * Documentation: https://v0.dev/docs#integrating-generated-code-into-your-nextjs-app
  */
-import React from "react"
+import React, { useState } from "react"
 // import { AvatarImage, AvatarFallback, Avatar } from "@/components/ui/avatar"
 // import { Button } from "@/components/ui/button"
 // import { Input } from "@/components/ui/input"
@@ -11,7 +11,17 @@ import { AvatarImage, AvatarFallback, Avatar } from "./components/ui/avatar"
 import { Button } from "./components/ui/button"
 import { Input } from "./components/ui/input"
 
-export default function Chat() {
+type ChatProps = {
+  messages: any[];
+  onSendMessage: (message: string) => void;
+}
+
+export default function Chat({ messages, onSendMessage }: ChatProps) {
+  const [input, setInput] = useState<string>('');
+  // const onSendMessage = () => {
+  //   console.log('send message', input);
+  // }
+
   return (
     <div className="flex h-screen w-full flex-col">
       <header className="flex items-center justify-between bg-gray-900 px-4 py-3 text-white">
@@ -189,6 +199,8 @@ export default function Chat() {
               className="flex-1 bg-transparent focus:outline-none"
               placeholder="Type your message..."
               type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
             />
             <Button
               className="text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"

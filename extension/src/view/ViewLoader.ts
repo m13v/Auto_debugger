@@ -114,7 +114,7 @@ export default class ViewLoader {
         </script>
     </head>
     <body>
-        <div id="root"></div>
+        <div id="root" class="bg-gray-900"></div>
 
         <script src="${reactAppUri}"></script>
     </body>

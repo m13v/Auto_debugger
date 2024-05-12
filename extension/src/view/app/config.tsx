@@ -1,149 +1,62 @@
-import * as React from "react";
-import { type IConfig, type IUser, ICommand, CommandAction } from "./model";
-// import DummyChatComponent from './ChatComponent'; // Import the chat component
-import Chat from './Chat'; // Import the chat component
+import React, { useState, useEffect } from 'react';
+
+import { type IConfig, type IUser, type ICommand, CommandAction } from "./model";
+import Chat from './Chat';
 
 interface IConfigProps {
   vscode: any;
   initialData: IConfig;
 }
 
-interface IConfigState {
-  config: IConfig;
-}
+// interface IConfigState {
+//   config: IConfig;
+// }
 
-export default class Config extends React.Component<
-  IConfigProps,
-  IConfigState
-> {
-  constructor(props: any) {
-    super(props);
+const Config = ({ vscode, initialData }: IConfigProps) => {
+  // const [config, setConfig] = useState<IConfig>(() => {
+  //   const oldState = vscode.getState();
+  //   return oldState || { config: initialData };
+  // });
 
-    let initialData = this.props.initialData;
-
-    let oldState = this.props.vscode.getState();
-    if (oldState) {
-      this.state = oldState;
-    } else {
-      this.state = { config: initialData };
-    }
-
-    // Handle the message inside the webview
-    window.addEventListener('message', event => {
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
       console.log('Webview received message:', event.data);
 
-      this.props.vscode.postMessage({
+      vscode.postMessage({
         command: 'pong',
         text: 'Pong from webview'
       });
-
-    })
-
-  }
-
-  private defineState(newSate: IConfigState) {
-    this.setState(newSate);
-    this.props.vscode.setState(newSate);
-  }
-
-  onChangeUserActiveState(userIndex: number) {
-    let newState = { ...this.state };
-    newState.config.users[userIndex].active = !newState.config.users[userIndex]
-      .active;
-
-    this.defineState(newState);
-  }
-
-  onAddRole(event: React.KeyboardEvent<HTMLInputElement>, userIndex: number) {
-    if (event.keyCode === 13 && event.currentTarget.value !== "") {
-      let newState = { ...this.state };
-      newState.config.users[userIndex].roles.push(event.currentTarget.value);
-      this.defineState(newState);
-      event.currentTarget.value = "";
-    }
-  }
-
-  onAddUser(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.keyCode === 13 && event.currentTarget.value !== "") {
-      let newState = { ...this.state };
-      let newUser: IUser = {
-        name: event.currentTarget.value,
-        active: true,
-        roles: []
-      };
-      newState.config.users.push(newUser);
-      this.defineState(newState);
-      event.currentTarget.value = "";
-    }
-  }
-
-  renderUsers(users: IUser[]) {
-    return (
-      <React.Fragment>
-        <h2>Glavin Test 3 User List :</h2>
-        <ul className="">
-          {users && users.length > 0
-            ? users.map((user, userIndex) => {
-                let roles =
-                  user.roles && user.roles.length > 0
-                    ? user.roles.join(",")
-                    : null;
-
-                return (
-                  <li key={userIndex}>
-                    {user.name}
-                    <br />
-                    Is active :{" "}
-                    <input
-                      type="checkbox"
-                      checked={user.active}
-                      onChange={() => this.onChangeUserActiveState(userIndex)}
-                    />
-                    <br />
-                    Roles : {roles}
-                    <input
-                      type="text"
-                      placeholder="Add Role"
-                      onKeyUp={event => this.onAddRole(event, userIndex)}
-                    />
-                  </li>
-                );
-              })
-            : null}
-        </ul>
-        <input
-          type="text"
-          placeholder="Add User"
-          onKeyUp={event => this.onAddUser(event)}
-        />
-      </React.Fragment>
-    );
-  }
-
-  render() {
-    return (
-      <React.Fragment>
-        <h1>Config name : {this.state.config.name}</h1>{" "}
-        {this.state.config.description}
-        {this.renderUsers(this.state.config.users)}
-        <br />
-        <input
-          className="save"
-          type="button"
-          value="Save the configuration"
-          onClick={() => this.saveConfig()}
-        />
-        <Chat /> {/* Render the chat component here */}
-      </React.Fragment>
-    );
-  }
-
-  saveConfig() {
-    let command: ICommand = {
-      action: CommandAction.Save,
-      content: this.state.config
     };
-    this.props.vscode.postMessage(command);
-  }
-}
+
+    window.addEventListener('message', handleMessage);
+
+    // Cleanup function to remove the event listener
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [vscode]);
+
+  /*
+  const defineState = (newState: IConfigState) => {
+    setConfig(newState);
+    vscode.setState(newState);
+  };
+
+  const saveConfig = () => {
+    const command: ICommand = {
+      action: CommandAction.Save,
+      content: config
+    };
+    vscode.postMessage(command);
+  };
+  */
+
+  return (
+    <React.Fragment>
+      <Chat />
+    </React.Fragment>
+  );
+};
+
+export default Config;
 
