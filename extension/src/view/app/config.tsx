@@ -34,10 +34,10 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
 				}
 				case "update-context": {
 					const { context } = event.data;
-          const { history } = context;
+					const { history } = context;
 					// const newCode = context.code;
-          const lastHistoryItem = history[history.length - 1];
-          const newCode = lastHistoryItem.code;
+					const lastHistoryItem = history[history.length - 1];
+					const newCode = lastHistoryItem.code;
 
 					console.log("Updating context with code:", newCode);
 

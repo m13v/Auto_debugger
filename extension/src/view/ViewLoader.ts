@@ -4,97 +4,95 @@ import * as path from "path";
 
 import { type IConfig, ICommand, CommandAction, IMessage } from "./app/model";
 
-import { CodeAgent } from '../server/CodeAgent'
-
+import { CodeAgent } from "../server/CodeAgent";
 
 export default class ViewLoader {
-  private readonly _panel: vscode.WebviewPanel | undefined;
-  private readonly _extensionPath: string;
-  private _disposables: vscode.Disposable[] = [];
+	private readonly _panel: vscode.WebviewPanel | undefined;
+	private readonly _extensionPath: string;
+	private _disposables: vscode.Disposable[] = [];
 
-  constructor(fileUri: vscode.Uri, extensionPath: string) {
-    this._extensionPath = extensionPath;
+	constructor(fileUri: vscode.Uri, extensionPath: string) {
+		this._extensionPath = extensionPath;
 
-    let config = this.getFileContent(fileUri);
-    if (config) {
-      this._panel = vscode.window.createWebviewPanel(
-        "configView",
-        "Config View",
-        vscode.ViewColumn.One,
-        {
-          enableScripts: true,
+		let config = this.getFileContent(fileUri);
+		if (config) {
+			this._panel = vscode.window.createWebviewPanel(
+				"configView",
+				"Config View",
+				vscode.ViewColumn.One,
+				{
+					enableScripts: true,
 
-          localResourceRoots: [
-            vscode.Uri.file(path.join(extensionPath, "configViewer"))
-          ]
-        }
-      );
+					localResourceRoots: [
+						vscode.Uri.file(path.join(extensionPath, "configViewer")),
+					],
+				},
+			);
 
-      this._panel.webview.html = this.getWebviewContent(config);
-    ////////////////////////////////////////////////////////////////
-      this._panel.webview.onDidReceiveMessage(
-        message => {
-          console.log('Extension received message', message)
-          codeAgent.onReceiveMessage(message);
+			this._panel.webview.html = this.getWebviewContent(config);
+			////////////////////////////////////////////////////////////////
+			this._panel.webview.onDidReceiveMessage(
+				(message) => {
+					console.log("Extension received message", message);
+					codeAgent.onReceiveMessage(message);
 
-          if (message.command) {
-            // Handling messages with 'command'
-            switch (message.command) {
-              case 'doSomething':
-                vscode.window.showErrorMessage(message.text);
-                return;
-                // Handle other messages or commands
-            }
-          } else if (message.action) {
-            // Handling messages with 'action' (assuming ICommand interface)
-            switch (message.action) {
-              case CommandAction.Save:
-                this.saveFileContent(message.fileUri, message.content);
-                break;
-              // Handle other actions
-            }
-          }
-        },
-        undefined,
-        this._disposables
-      );
+					if (message.command) {
+						// Handling messages with 'command'
+						switch (message.command) {
+							case "doSomething":
+								vscode.window.showErrorMessage(message.text);
+								return;
+							// Handle other messages or commands
+						}
+					} else if (message.action) {
+						// Handling messages with 'action' (assuming ICommand interface)
+						switch (message.action) {
+							case CommandAction.Save:
+								this.saveFileContent(message.fileUri, message.content);
+								break;
+							// Handle other actions
+						}
+					}
+				},
+				undefined,
+				this._disposables,
+			);
 
-      // this._panel.webview.postMessage({
-      //   command: 'update',
-      //   data: {
-      //     "hello": "extension",
-      //    }
-      // });
+			// this._panel.webview.postMessage({
+			//   command: 'update',
+			//   data: {
+			//     "hello": "extension",
+			//    }
+			// });
 
-      const codeAgent = new CodeAgent({
-        // biome-ignore lint/style/noNonNullAssertion: <explanation>
-        postMessage: (message: any) => this._panel!.webview.postMessage(message)
-      });
-      console.log('Started code agent', codeAgent);
+			const codeAgent = new CodeAgent({
+				// biome-ignore lint/style/noNonNullAssertion: <explanation>
+				postMessage: (message: any) =>
+					this._panel!.webview.postMessage(message),
+			});
+			console.log("Started code agent", codeAgent);
 
-      // this._panel.webview.onDidReceiveMessage(
-      //   message => {
-      //     console.log('Extension received message', message)
+			// this._panel.webview.onDidReceiveMessage(
+			//   message => {
+			//     console.log('Extension received message', message)
 
-      //     codeAgent.receiveMessage(message);
-      // })
+			//     codeAgent.receiveMessage(message);
+			// })
 
+			////////////////////////////////////////////////////////////////
+		}
+	}
 
-    ////////////////////////////////////////////////////////////////
+	private getWebviewContent(config: IConfig): string {
+		// Local path to main script run in the webview
+		const reactAppPathOnDisk = vscode.Uri.file(
+			path.join(this._extensionPath, "configViewer", "configViewer.js"),
+		);
+		const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
 
-    }
-  }
+		const configJson = JSON.stringify(config);
 
-  private getWebviewContent(config: IConfig): string {
-    // Local path to main script run in the webview
-    const reactAppPathOnDisk = vscode.Uri.file(
-      path.join(this._extensionPath, "configViewer", "configViewer.js")
-    );
-    const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
-
-    const configJson = JSON.stringify(config);
-
-    return `<!DOCTYPE html>
+		return `<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
@@ -118,26 +116,26 @@ export default class ViewLoader {
         <script src="${reactAppUri}"></script>
     </body>
     </html>`;
-  }
+	}
 
-  private getFileContent(fileUri: vscode.Uri): IConfig | undefined {
-    if (fs.existsSync(fileUri.fsPath)) {
-      let content = fs.readFileSync(fileUri.fsPath, "utf8");
-      let config: IConfig = JSON.parse(content);
+	private getFileContent(fileUri: vscode.Uri): IConfig | undefined {
+		if (fs.existsSync(fileUri.fsPath)) {
+			let content = fs.readFileSync(fileUri.fsPath, "utf8");
+			let config: IConfig = JSON.parse(content);
 
-      return config;
-    }
-    return undefined;
-  }
+			return config;
+		}
+		return undefined;
+	}
 
-  private saveFileContent(fileUri: vscode.Uri, config: IConfig) {
-    if (fs.existsSync(fileUri.fsPath)) {
-      let content: string = JSON.stringify(config);
-      fs.writeFileSync(fileUri.fsPath, content);
+	private saveFileContent(fileUri: vscode.Uri, config: IConfig) {
+		if (fs.existsSync(fileUri.fsPath)) {
+			let content: string = JSON.stringify(config);
+			fs.writeFileSync(fileUri.fsPath, content);
 
-      vscode.window.showInformationMessage(
-        `👍 Configuration saved to ${fileUri.fsPath}`
-      );
-    }
-  }
+			vscode.window.showInformationMessage(
+				`👍 Configuration saved to ${fileUri.fsPath}`,
+			);
+		}
+	}
 }

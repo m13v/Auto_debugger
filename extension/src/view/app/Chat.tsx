@@ -1,19 +1,22 @@
 import React, { useCallback, useState } from "react";
 import { AvatarImage, AvatarFallback, Avatar } from "./components/ui/avatar";
-import CodeMirror from '@uiw/react-codemirror';
-import { javascript } from '@codemirror/lang-javascript';
-import { monokaiDimmed } from '@uiw/codemirror-theme-monokai-dimmed';
+import CodeMirror from "@uiw/react-codemirror";
+import { javascript } from "@codemirror/lang-javascript";
+import { monokaiDimmed } from "@uiw/codemirror-theme-monokai-dimmed";
 
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
-import type { AutoDebugContext, Message, UserMessage } from './model'
+import type { AutoDebugContext, Message, UserMessage } from "./model";
 
 type ChatProps = {
 	messages: Message[];
 	onSendMessage: (message: string) => void;
 };
 
-export default function Chat({ messages: chatMessages, onSendMessage }: ChatProps) {
+export default function Chat({
+	messages: chatMessages,
+	onSendMessage,
+}: ChatProps) {
 	const [input, setInput] = useState<string>("");
 	// const [chatMessages, setChatMessages] = useState<Message[]>(messages);
 
@@ -30,7 +33,9 @@ export default function Chat({ messages: chatMessages, onSendMessage }: ChatProp
 	);
 
 	return (
-		<div className="flex h-screen w-full flex-col bg-[#1e1e1e]"> {/* Changed background color */}
+		<div className="flex h-screen w-full flex-col bg-[#1e1e1e]">
+			{" "}
+			{/* Changed background color */}
 			{/* Header and other components remain unchanged */}
 			<div className="flex-1 overflow-auto p-4">
 				{chatMessages.map((message, index) => (
@@ -39,18 +44,18 @@ export default function Chat({ messages: chatMessages, onSendMessage }: ChatProp
 						className={`flex ${
 							message.type === "user" ? "justify-end" : "items-start"
 						} gap-3 mb-2`}
-            >
-            {message.type === "assistant" && (
-              <>
-                {/* <div className="status-display mb-1 text-sm text-gray-500">
+					>
+						{message.type === "assistant" && (
+							<>
+								{/* <div className="status-display mb-1 text-sm text-gray-500">
                   {message.status ? `Status: ${message.status}` : "No status"}
                 </div> */}
-                <Avatar className="h-8 w-8">
-                  <AvatarImage alt="Assistant" src="/avatar.jpg" />
-                  <AvatarFallback>AI</AvatarFallback>
-                </Avatar>
-              </>
-            )}
+								<Avatar className="h-8 w-8">
+									<AvatarImage alt="Assistant" src="/avatar.jpg" />
+									<AvatarFallback>AI</AvatarFallback>
+								</Avatar>
+							</>
+						)}
 						<div className="max-w-[75%] space-y-2">
 							<div
 								className={`rounded-lg ${
@@ -59,19 +64,21 @@ export default function Chat({ messages: chatMessages, onSendMessage }: ChatProp
 							>
 								<p>{message.text}</p>
 
-								{message.type === 'assistant' && message.context && (
-								<ShowAutoDebugging context={message.context} />
+								{message.type === "assistant" && message.context && (
+									<ShowAutoDebugging context={message.context} />
 								)}
 							</div>
 						</div>
 					</div>
 				))}
 			</div>
-			<div className="border-t border-gray-200 bg-gray-900 px-4 py-3 dark:border-gray-800 dark:bg-gray-950"> {/* Adjusted footer background */}
+			<div className="border-t border-gray-200 bg-gray-900 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
+				{" "}
+				{/* Adjusted footer background */}
 				<form onSubmit={onSubmit}>
 					<div className="flex items-center gap-2">
 						<Input
-              className="flex-1 bg-[#1e1e1e] focus:outline-none text-white" // Set background color to match the chat area
+							className="flex-1 bg-[#1e1e1e] focus:outline-none text-white" // Set background color to match the chat area
 							placeholder="Type your message..."
 							type="text"
 							value={input}
@@ -92,45 +99,51 @@ export default function Chat({ messages: chatMessages, onSendMessage }: ChatProp
 	);
 }
 
-function ShowAutoDebugging({ context }: { context: AutoDebugContext }): React.ReactNode {
-  const { history } = context;
-  const lastHistoryItem = history[history.length - 1];
-  const newCode = lastHistoryItem.code;
+function ShowAutoDebugging({
+	context,
+}: { context: AutoDebugContext }): React.ReactNode {
+	const { history } = context;
+	const lastHistoryItem = history[history.length - 1];
+	const newCode = lastHistoryItem.code;
 
-  return <div>
-    <div>Count: {history.length}</div>
-    <CodeMirror
-      value={newCode}
-      height="600px"
-      extensions={[javascript({ jsx: true })]}
-      theme={monokaiDimmed}
-    />
-    <pre className="whitespace-pre-wrap">
-      {lastHistoryItem.result?.stdout}
-    </pre>
-    <pre className="whitespace-pre-wrap">
-      {lastHistoryItem.result?.stderr}
-    </pre>
+	return (
+		<div>
+			<div>Count: {history.length}</div>
+			<CodeMirror
+				value={newCode}
+				height="600px"
+				extensions={[javascript({ jsx: true })]}
+				theme={monokaiDimmed}
+			/>
+			<pre className="whitespace-pre-wrap">
+				{lastHistoryItem.result?.stdout}
+			</pre>
+			<pre className="whitespace-pre-wrap">
+				{lastHistoryItem.result?.stderr}
+			</pre>
 
-	{lastHistoryItem.result && (
-		<div className="mt-2 p-2 bg-gray-800 text-white rounded">
-		<p><strong>Output:</strong> {lastHistoryItem.result.stdout}</p>
-		{lastHistoryItem.result.stderr && (
-			<p><strong>Error:</strong> {lastHistoryItem.result.stderr}</p>
-		)}
-		</div>
-	)}
+			{lastHistoryItem.result && (
+				<div className="mt-2 p-2 bg-gray-800 text-white rounded">
+					<p>
+						<strong>Output:</strong> {lastHistoryItem.result.stdout}
+					</p>
+					{lastHistoryItem.result.stderr && (
+						<p>
+							<strong>Error:</strong> {lastHistoryItem.result.stderr}
+						</p>
+					)}
+				</div>
+			)}
 
-    <pre className="whitespace-pre-wrap">
-      {lastHistoryItem.analysis}
-    </pre>
-    <div>
-      {lastHistoryItem.status} - {lastHistoryItem.reason}
-    </div>
-    {/* <pre>
+			<pre className="whitespace-pre-wrap">{lastHistoryItem.analysis}</pre>
+			<div>
+				{lastHistoryItem.status} - {lastHistoryItem.reason}
+			</div>
+			{/* <pre>
       {JSON.stringify(lastHistoryItem, null, 2)}
     </pre> */}
-  </div>;
+		</div>
+	);
 }
 
 function SendIcon(props: any) {

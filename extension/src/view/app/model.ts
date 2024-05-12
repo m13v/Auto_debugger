@@ -1,30 +1,29 @@
 import type * as vscode from "vscode";
 
 export interface IConfig {
-  name: string;
-  description: string;
-  users: IUser[];
+	name: string;
+	description: string;
+	users: IUser[];
 }
 export interface IUser {
-  name: string;
-  active: boolean;
-  roles: string[];
+	name: string;
+	active: boolean;
+	roles: string[];
 }
 
 export interface ICommand {
-  action: CommandAction;
-  content: IConfig;
+	action: CommandAction;
+	content: IConfig;
 }
 
 export enum CommandAction {
-  Save
+	Save,
 }
 
 export interface IMessage {
-  type: string;
-  content: any;
+	type: string;
+	content: any;
 }
-
 
 export enum GroqModels {
 	Llama3_8b = "llama3-8b-8192",
@@ -74,9 +73,9 @@ export type UserMessage = {
 export type AssistantMessage = {
 	type: "assistant";
 	text: string;
-  /**
-   * All auto debugger context
-   */
+	/**
+	 * All auto debugger context
+	 */
 	context?: AutoDebugContext;
 };
 

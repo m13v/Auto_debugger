@@ -83,8 +83,8 @@ export class CodeAgent {
 	}
 
 	async codeGen(_goal: string) {
-    // FIXME
-    const goal = `Write a function which can check whether the following string is valid or not.
+		// FIXME
+		const goal = `Write a function which can check whether the following string is valid or not.
 - "abc" => true
 - "abd" => false
 - "aabbcc" => true
@@ -97,7 +97,7 @@ export class CodeAgent {
 A string is valid if it has the same number of characters repeated in a sequence.
 And the characters in the sequence should be in incrementing alphabetical order.
 `;
-    /*
+		/*
 		const context: AutoDebugContext = {
 			goal,
 			scratchpad: "",
@@ -124,23 +124,23 @@ And the characters in the sequence should be in incrementing alphabetical order.
 		});
     */
 
-    const onUpdateContext = (context: AutoDebugContext) => {
-      this.sendMessage({
-        command: "update-context",
-        context,
-      });
-    }
+		const onUpdateContext = (context: AutoDebugContext) => {
+			this.sendMessage({
+				command: "update-context",
+				context,
+			});
+		};
 
-    await startDebugging({ goal, onUpdateContext });
+		await startDebugging({ goal, onUpdateContext });
 	}
 }
 
 async function startDebugging({
-  goal,
-  onUpdateContext,
+	goal,
+	onUpdateContext,
 }: {
-  goal: string;
-  onUpdateContext: (context: AutoDebugContext) => void;
+	goal: string;
+	onUpdateContext: (context: AutoDebugContext) => void;
 }) {
 	let attempts = 0;
 
@@ -157,20 +157,20 @@ async function startDebugging({
 
 	const context: AutoDebugContext = {
 		// goal: "Print 2 ^ 32 to console",
-// 		goal: `Write a function which can check whether the following string is valid or not.
-// - "abc" => true
-// - "abd" => false
-// - "aabbcc" => true
-// - "aaabbbccc" => true
-// - "aaabbbcccc" => false
-// - "aabbccdd" => true
-// - "aabbccdde" => false
-// - "aaaaabbbbbcccccdddddeeeee" => true
+		// 		goal: `Write a function which can check whether the following string is valid or not.
+		// - "abc" => true
+		// - "abd" => false
+		// - "aabbcc" => true
+		// - "aaabbbccc" => true
+		// - "aaabbbcccc" => false
+		// - "aabbccdd" => true
+		// - "aabbccdde" => false
+		// - "aaaaabbbbbcccccdddddeeeee" => true
 
-// A string is valid if it has the same number of characters repeated in a sequence.
-// And the characters in the sequence should be in increasing order.
-// `,
-    goal,
+		// A string is valid if it has the same number of characters repeated in a sequence.
+		// And the characters in the sequence should be in increasing order.
+		// `,
+		goal,
 		scratchpad: "",
 		// acceptanceCriterias: [],
 		history: [],
@@ -208,7 +208,7 @@ async function startDebugging({
 
 			programWithResult.analysis = reflection;
 			// context.scratchpad = reflection;
-				onUpdateContext(context);
+			onUpdateContext(context);
 
 			// check if done
 			done = await getTaskStatus(context);
@@ -453,51 +453,51 @@ Assume the function must return a value if it is not a void function.
 # Task
 ${context.goal}`;
 
-  const messages: CompletionCreateParams.Message[] = [
-    {
-      role: "system",
-      content:
-        "You are an expert software engineer with knowledge of debugging best practices.",
-    },
-    { role: "user", content: prompt },
-  ];
+	const messages: CompletionCreateParams.Message[] = [
+		{
+			role: "system",
+			content:
+				"You are an expert software engineer with knowledge of debugging best practices.",
+		},
+		{ role: "user", content: prompt },
+	];
 
-  if (context.history.length > 0) {
-    const lastProgram = context.history[context.history.length - 1];
-    messages.push({
-      role: "assistant",
-      content: lastProgram.code,
-    });
-    messages.push({
-      role: "user",
-      content: `Result: ${lastProgram.result?.returnValue}
+	if (context.history.length > 0) {
+		const lastProgram = context.history[context.history.length - 1];
+		messages.push({
+			role: "assistant",
+			content: lastProgram.code,
+		});
+		messages.push({
+			role: "user",
+			content: `Result: ${lastProgram.result?.returnValue}
 Stdout: ${lastProgram.result?.stdout}
 Stderr: ${lastProgram.result?.stderr}
 
 -----
 
 Given this result, write an analysis of the code.
-`
-    });
-    messages.push({
-      role: "assistant",
-      content: `Analysis:
+`,
+		});
+		messages.push({
+			role: "assistant",
+			content: `Analysis:
 ${lastProgram.analysis}
-`
-    });
-    messages.push({
-      role: "user",
-      content: `Write an improved version of the code to fix the bugs and meet the acceptance criteria of the task.
+`,
+		});
+		messages.push({
+			role: "user",
+			content: `Write an improved version of the code to fix the bugs and meet the acceptance criteria of the task.
 Only output the code. Follow the instructions above.
-`
-    });
-  }
+`,
+		});
+	}
 
 	const chatCompletion = await groq.chat.completions.create({
 		messages,
 		// model: "llama3-8b-8192",
 		// model: GroqModels.Llama3_8b,
-    model: GroqModels.Llama3_70b,
+		model: GroqModels.Llama3_70b,
 		//
 		// Optional parameters
 		//
