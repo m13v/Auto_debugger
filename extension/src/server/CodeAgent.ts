@@ -15,7 +15,7 @@ import {
 
 // import type { Message } from "@/Chat";
 // dotenv.config();
-
+const OPENAI_API_KEY = "sk-proj-LzzSOyGh69pIGV8yli4yT3BlbkFJSiGjSuJtnDjpMW8MYINl";
 const GROQ_API_KEY = "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";
 const seed = 42;
 const maxSteps = 10;
