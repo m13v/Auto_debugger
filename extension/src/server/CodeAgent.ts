@@ -12,9 +12,10 @@ import {
 	type ExecutionResult,
 } from "../view/app/model";
 
-dotenv.config();
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
+// import type { Message } from "@/Chat";
+// dotenv.config();
+
+const GROQ_API_KEY = "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";
 const seed = 42;
 const maxSteps = 10;
 
