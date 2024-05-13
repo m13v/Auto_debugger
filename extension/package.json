@@ -76,6 +76,7 @@
     "@uiw/react-codemirror": "^4.22.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "dotenv": "^16.4.5",
     "fsevents": "^2.3.3",
     "groq-sdk": "^0.3.3",
     "lucide-react": "^0.378.0",

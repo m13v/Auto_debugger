@@ -1,7 +1,7 @@
 import vm from "vm";
 
 import Groq from "groq-sdk";
-// import dotenv from "dotenv";
+import dotenv from "dotenv";
 import type { CompletionCreateParams } from "groq-sdk/resources/chat";
 import {
 	type AutoDebugContext,
@@ -11,12 +11,10 @@ import {
 	type Program,
 	type ExecutionResult,
 } from "../view/app/model";
-// } from "@/model";
 
-// import type { Message } from "@/Chat";
-// dotenv.config();
-const OPENAI_API_KEY = "sk-proj-LzzSOyGh69pIGV8yli4yT3BlbkFJSiGjSuJtnDjpMW8MYINl";
-const GROQ_API_KEY = "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";
+dotenv.config();
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const seed = 42;
 const maxSteps = 10;
 
@@ -24,9 +22,7 @@ const groq = new Groq({
 	apiKey: GROQ_API_KEY,
 });
 
-// const fastModel = GroqModels.Llama3_8b;
 const fastModel = GroqModels.Llama3_70b;
-const slowModel = GroqModels.Llama3_70b;
 
 function printBanner(title: string) {
 	console.log(`\n\n${"=".repeat(20)} ${title} ${"=".repeat(20)}`);
