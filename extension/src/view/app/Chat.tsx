@@ -4,6 +4,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { monokaiDimmed } from "@uiw/codemirror-theme-monokai-dimmed";
 import { EditorView } from "@codemirror/view";
+// import { llamaImage } from './llama.jpg';
 
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
@@ -211,33 +212,35 @@ function ShowAutoDebugging({
 
 			{/* <pre className="whitespace-pre-wrap">{lastHistoryItem.plan}</pre> */}
 
-			{lastHistoryItem.result && (
-				<div
-					className="mt-2 p-2 bg-gray-800 text-white rounded"
-					style={{ fontSize: "12px" }}
-				>
-					<div>
-						<strong>Terminal:</strong>
-						<pre
-							className="whitespace-pre-wrap"
-							style={{ fontWeight: "normal" }}
-						>
-							{lastHistoryItem.result.stdout}
-						</pre>
-					</div>
-					{lastHistoryItem.result.stderr && (
-						<div>
-							<strong>Errors:</strong>
-							<pre
-								className="whitespace-pre-wrap"
-								style={{ fontWeight: "normal" }}
-							>
-								{lastHistoryItem.result.stderr}
-							</pre>
-						</div>
-					)}
-				</div>
-			)}
+      {lastHistoryItem.result && (
+        <>
+          <div> <strong>TERMINAL:</strong> </div>
+          <div
+            className="terminal-output"
+            style={{ backgroundColor: "black", color: "white", padding: "10px", fontSize: "12px", fontWeight: "normal" }}
+          >
+            <div>
+              <pre
+                className="whitespace-pre-wrap"
+                style={{ fontWeight: "normal" }}
+              >
+                {lastHistoryItem.result.stdout}
+              </pre>
+            </div>
+            {lastHistoryItem.result.stderr && (
+              <div>
+                <strong>Errors:</strong>
+                <pre
+                  className="whitespace-pre-wrap"
+                  style={{ fontWeight: "normal" }}
+                >
+                  {lastHistoryItem.result.stderr}
+                </pre>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
 			<pre className="whitespace-pre-wrap">{lastHistoryItem.analysis}</pre>
 			<div>

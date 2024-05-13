@@ -18,7 +18,7 @@ import {
 
 const GROQ_API_KEY = "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";
 const seed = 42;
-const maxSteps = 100;
+const maxSteps = 10;
 
 const groq = new Groq({
 	apiKey: GROQ_API_KEY,
