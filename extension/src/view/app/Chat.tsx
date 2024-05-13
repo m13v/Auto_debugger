@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useRef } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { AvatarImage, AvatarFallback, Avatar } from "./components/ui/avatar";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
@@ -29,15 +29,9 @@ export default function Chat({
 	onSendMessage,
 }: ChatProps) {
 	const [input, setInput] = useState<string>("");
-	const inputRef = useRef<HTMLTextAreaElement>(null); // Create a ref for the input element
 	// const [chatMessages, setChatMessages] = useState<Message[]>(messages);
 	const [counter, setCounter] = useState(0);
 	// const [startDateTime, setStartDateTime] = useState<Date | null>(null);
-	useEffect(() => {
-		if (inputRef.current) {
-			inputRef.current.focus(); // Automatically focus the input when the component mounts
-		}
-	}, []);
 
 	useEffect(() => {
 		setCounter(() => 0);
@@ -63,14 +57,6 @@ export default function Chat({
 		},
 		[input, chatMessages, onSendMessage],
 	);
-
-  const formRef = useRef<HTMLFormElement>(null);
-  const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      formRef.current?.dispatchEvent(new Event('submit', { cancelable: true }));
-    }
-  };
 
 	return (
 		<div className="flex h-screen w-full flex-col bg-[#1e1e1e]">
@@ -136,7 +122,7 @@ export default function Chat({
 			<div className="border-t border-gray-200 bg-gray-900 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
 				{" "}
 				{/* Adjusted footer background */}
-				<form ref={formRef} onSubmit={onSubmit}>
+				<form onSubmit={onSubmit}>
 					<div className="flex items-center gap-2">
 						{/*
 						<Input
@@ -147,19 +133,13 @@ export default function Chat({
 							onChange={(e) => setInput(e.target.value)}
 						/>
 						*/}
-            <Textarea
-              className="flex-1 bg-[#1e1e1e] focus:outline-none text-white"
-              placeholder="Type your message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              ref={inputRef}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault(); // Prevent default to stop from entering a new line
-                  formRef.current?.requestSubmit(); // Use requestSubmit to trigger form submission
-                }
-              }}
-            />
+						<Textarea
+							className="flex-1 bg-[#1e1e1e] focus:outline-none text-white" // Set background color to match the chat area
+							placeholder="Type your message..."
+							// type="text"
+							value={input}
+							onChange={(e) => setInput(e.target.value)}
+						/>
 						<Button
 							className="text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
 							size="icon"
