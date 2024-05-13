@@ -4,3 +4,4 @@ node_modules
 *.vsix
 .env
 configViewer/configViewer.js
+.DS_Store
