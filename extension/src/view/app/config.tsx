@@ -17,7 +17,7 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
 
 	useEffect(() => {
 		const handleMessage = (event: MessageEvent) => {
-			console.log("Webview received message:", event.data);
+			// console.log("Webview received message:", event.data);
 
 			switch (event.data.command) {
 				case "message": {
@@ -39,7 +39,7 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
 					const lastHistoryItem = history[history.length - 1];
 					const newCode = lastHistoryItem.code;
 
-					console.log("Updating context with code:", newCode);
+					// console.log("Updating context with code:", newCode);
 
 					setMessages((prevMessages) => {
 						// get last message
@@ -54,7 +54,7 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
 							// Update messages state to include the updated message
 							return [...prevMessages.slice(0, -1), updatedMessage];
 						}
-						console.error("No assistant message to update", lastMessage);
+						// console.error("No assistant message to update", lastMessage);
 						return prevMessages; // Return previous messages unchanged if no update is needed
 					});
 				}

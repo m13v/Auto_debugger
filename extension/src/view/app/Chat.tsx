@@ -1,9 +1,10 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
 import { AvatarImage, AvatarFallback, Avatar } from "./components/ui/avatar";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { monokaiDimmed } from "@uiw/codemirror-theme-monokai-dimmed";
 import { EditorView } from "@codemirror/view";
+import ReactMarkdown from 'react-markdown';
 // import { llamaImage } from './llama.jpg';
 
 import { Button } from "./components/ui/button";
@@ -29,34 +30,52 @@ export default function Chat({
 	onSendMessage,
 }: ChatProps) {
 	const [input, setInput] = useState<string>("");
-	// const [chatMessages, setChatMessages] = useState<Message[]>(messages);
+	const inputRef = useRef<HTMLTextAreaElement>(null); // Create a ref for the input element
 	const [counter, setCounter] = useState(0);
-	// const [startDateTime, setStartDateTime] = useState<Date | null>(null);
+    const [isActive, setIsActive] = useState(true); // State to control the interval
+	const [historyIndex, setHistoryIndex] = useState<number>(-1);
+	const [isExpanded, setIsExpanded] = useState(false);
 
 	useEffect(() => {
-		setCounter(() => 0);
-		const interval = setInterval(() => {
-			setCounter((prevCounter) => prevCounter + 0.1);
-		}, 100);
-
-		return () => clearInterval(interval);
+		if (inputRef.current) {
+			inputRef.current.focus(); // Automatically focus the input when the component mounts
+		}
 	}, []);
 
-	const onSubmit = useCallback(
-		(event: React.FormEvent<HTMLFormElement>) => {
-			event.preventDefault();
-			if (!input.trim()) return;
-			const newUserMessage: UserMessage = { type: "user", text: input };
-			// setChatMessages([...chatMessages, newUserMessage]);
-			onSendMessage(newUserMessage.text); // Pass only the text of the new message
-			setInput("");
+    useEffect(() => {
+        if (!isActive) {
+            return; // If not active, do nothing (effectively pausing the interval)
+        }
 
-			// setStartDateTime(new Date());
+		const interval = setInterval(() => {
+			setCounter((prevCounter) => prevCounter + 0.1);
+	
+			// Check the status of the last history item and stop the interval if complete
+			const lastHistoryItem = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1].context?.history?.slice(-1)[0] : null;
+			if (lastHistoryItem && lastHistoryItem.status === 'complete') {
+				console.log("Last History Item Status:", lastHistoryItem.status);
+				setIsActive(false); // Stop the interval by setting isActive to false
+				clearInterval(interval); // Clear the interval immediately
+			}
+		}, 100);
 
-			setCounter(() => 0);
-		},
-		[input, chatMessages, onSendMessage],
-	);
+        return () => clearInterval(interval);
+    }, [chatMessages, isActive]); // Include isActive in the dependency array
+
+    const onSubmit = useCallback(
+        (event: React.FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            if (!input.trim()) return;
+            const newUserMessage: UserMessage = { type: "user", text: input };
+            onSendMessage(newUserMessage.text); // Pass only the text of the new message
+            setInput("");
+            setCounter(() => 0);
+            setIsActive(true); // Optionally reset the interval when sending a message
+        },
+        [input, onSendMessage]
+    );
+
+  const formRef = useRef<HTMLFormElement>(null);
 
 	return (
 		<div className="flex h-screen w-full flex-col bg-[#1e1e1e]">
@@ -99,6 +118,28 @@ export default function Chat({
 													Status: {status}
 												</span>
 											)}
+											<span className="text-white mx-4 flex-1 text-right">
+												Step:{" "}
+												{historyIndex < 0 ? history.length : (historyIndex + 1)} of{" "}
+												{history.length}
+											</span>
+											<div className="flex">
+												<button
+													onClick={() => setHistoryIndex((prev) => Math.max(prev - 1, 0))} // Decrement index, stop at 0
+													className="bg-blue-300 hover:bg-blue-400 text-gray-800 font-bold py-1 px-2 rounded-l"
+													style={{ marginRight: "8px" }}
+												>
+													&lt;
+												</button>
+												<button
+													onClick={() =>
+														setHistoryIndex((prev) => Math.min(prev + 1, history.length - 1))
+													} // Increment index, stop at max index
+													className="bg-blue-300 hover:bg-blue-400 text-gray-800 font-bold py-1 px-2 rounded-r"
+												>
+													&gt;
+												</button>
+											</div>
 										</div>
 									</>
 								)}
@@ -122,7 +163,7 @@ export default function Chat({
 			<div className="border-t border-gray-200 bg-gray-900 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
 				{" "}
 				{/* Adjusted footer background */}
-				<form onSubmit={onSubmit}>
+				<form ref={formRef} onSubmit={onSubmit}>
 					<div className="flex items-center gap-2">
 						{/*
 						<Input
@@ -134,11 +175,17 @@ export default function Chat({
 						/>
 						*/}
 						<Textarea
-							className="flex-1 bg-[#1e1e1e] focus:outline-none text-white" // Set background color to match the chat area
+							className="flex-1 bg-[#1e1e1e] focus:outline-none text-white"
 							placeholder="Type your message..."
-							// type="text"
 							value={input}
 							onChange={(e) => setInput(e.target.value)}
+							ref={inputRef}
+							onKeyDown={(event) => {
+								if (event.key === 'Enter' && !event.shiftKey) {
+									event.preventDefault(); // Prevent default to stop from entering a new line
+									formRef.current?.requestSubmit(); // Use requestSubmit to trigger form submission
+								}
+							}}
 						/>
 						<Button
 							className="text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -164,12 +211,13 @@ function ShowAutoDebugging({
 	const lastHistoryItem =
 		history[historyIndex < 0 ? history.length - 1 : historyIndex];
 	const newCode = lastHistoryItem.code;
+	const [isExpanded, setIsExpanded] = useState(false);
 
 	return (
 		<div>
 			<CodeMirror
 				value={newCode}
-				height="600px"
+				height="auto"
 				extensions={[
 					javascript({ jsx: true }),
 					EditorView.lineWrapping,
@@ -177,31 +225,6 @@ function ShowAutoDebugging({
 				]}
 				theme={monokaiDimmed}
 			/>
-
-			<div className="flex justify-between items-center mt-4">
-				<span className="text-white mx-4 flex-1 text-right">
-					Step:{" "}
-					{historyIndex < 0 ? history.length : (historyIndex + 1)} of{" "}
-					{history.length}
-				</span>
-				<div className="flex">
-					<button
-						onClick={() => setHistoryIndex((prev) => Math.max(prev - 1, 0))} // Decrement index, stop at 0
-						className="bg-blue-300 hover:bg-blue-400 text-gray-800 font-bold py-1 px-2 rounded-l"
-						style={{ marginRight: "8px" }}
-					>
-						&lt;
-					</button>
-					<button
-						onClick={() =>
-							setHistoryIndex((prev) => Math.min(prev + 1, history.length - 1))
-						} // Increment index, stop at max index
-						className="bg-blue-300 hover:bg-blue-400 text-gray-800 font-bold py-1 px-2 rounded-r"
-					>
-						&gt;
-					</button>
-				</div>
-			</div>
 
 			{/* <pre className="whitespace-pre-wrap">
 				{lastHistoryItem.result?.stdout}
@@ -212,43 +235,45 @@ function ShowAutoDebugging({
 
 			{/* <pre className="whitespace-pre-wrap">{lastHistoryItem.plan}</pre> */}
 
-      {lastHistoryItem.result && (
-        <>
-          <div> <strong>TERMINAL:</strong> </div>
-          <div
-            className="terminal-output"
-            style={{ backgroundColor: "black", color: "white", padding: "10px", fontSize: "12px", fontWeight: "normal" }}
-          >
-            <div>
-              <pre
-                className="whitespace-pre-wrap"
-                style={{ fontWeight: "normal" }}
-              >
-                {lastHistoryItem.result.stdout}
-              </pre>
-            </div>
-            {lastHistoryItem.result.stderr && (
-              <div>
-                <strong>Errors:</strong>
-                <pre
-                  className="whitespace-pre-wrap"
-                  style={{ fontWeight: "normal" }}
-                >
-                  {lastHistoryItem.result.stderr}
-                </pre>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+			{lastHistoryItem.result && (
+				<>
+					<div> <strong>TERMINAL:</strong> </div>
+					<div
+						className="terminal-output"
+						style={{ backgroundColor: "black", color: "white", padding: "10px", fontSize: "12px", fontWeight: "normal" }}
+					>
+						<div>
+							<pre
+								className="whitespace-pre-wrap"
+								style={{ fontWeight: "normal" }}
+							>
+								{lastHistoryItem.result.stdout}
+							</pre>
+						</div>
+						{lastHistoryItem.result.stderr && (
+							<div>
+								<strong>Errors:</strong>
+								<pre
+									className="whitespace-pre-wrap"
+									style={{ fontWeight: "normal" }}
+								>
+									{lastHistoryItem.result.stderr}
+								</pre>
+							</div>
+						)}
+					</div>
+				</>
+			)}
 
-			<pre className="whitespace-pre-wrap">{lastHistoryItem.analysis}</pre>
-			<div>
-				{lastHistoryItem.status} - {lastHistoryItem.reason}
-			</div>
-			{/* <pre>
-      {JSON.stringify(lastHistoryItem, null, 2)}
-    </pre> */}
+			<ReactMarkdown
+				children={isExpanded ? lastHistoryItem.analysis : `Analysis...`}
+				components={{
+					p: ({ node, ...props }) => <p style={{ fontSize: '0.8em' }} {...props} />,
+				}}
+			/>
+			<button onClick={() => setIsExpanded(!isExpanded)}>
+				{isExpanded ? 'Read less' : 'Read more'}
+			</button>
 		</div>
 	);
 }

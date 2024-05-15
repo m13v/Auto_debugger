@@ -1,7 +1,7 @@
 import vm from "vm";
-
+import { OpenAI } from "openai";
+import ChatCompletionTool from "openai"
 import Groq from "groq-sdk";
-import dotenv from "dotenv";
 import type { CompletionCreateParams } from "groq-sdk/resources/chat";
 import {
 	type AutoDebugContext,
@@ -11,12 +11,9 @@ import {
 	type Program,
 	type ExecutionResult,
 } from "../view/app/model";
-// } from "@/model";
 
-// import type { Message } from "@/Chat";
-// dotenv.config();
-
-const GROQ_API_KEY = "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";
+const OPENAI_API_KEY = 'sk-proj-qV5raJmrdu0csdMKsocVT3BlbkFJSLzXKdkbT0NATPjpyeGU'
+const GROQ_API_KEY = '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'
 const seed = 42;
 const maxSteps = 10;
 
@@ -24,7 +21,13 @@ const groq = new Groq({
 	apiKey: GROQ_API_KEY,
 });
 
-const fastModel = GroqModels.Llama3_70b;
+const openai = new OpenAI({
+	apiKey: OPENAI_API_KEY,
+});
+
+const GPTmodel = 'gpt-4o-2024-05-13';
+const Groqmodel = GroqModels.Llama3_70b;
+const fastModel = GPTmodel;
 
 function printBanner(title: string) {
 	console.log(`\n\n${"=".repeat(20)} ${title} ${"=".repeat(20)}`);
@@ -54,31 +57,8 @@ export class CodeAgent {
 				const userMessage: Message = { type: "user", text: message.text };
 				this.messages.push(userMessage);
 
-				// this.sendMessage({
-				//   command: 'message',
-				//   text: `${message.text} back!`
-				// });
-
 				const prompt = message.text;
 
-				/*
-				const chatCompletion = await groq.chat.completions.create({
-					messages: [
-						{
-							role: "system",
-							content: this.persona,
-						},
-						{ role: "user", content: prompt },
-					],
-					model: GroqModels.Llama3_8b,
-					temperature: 0.5,
-					max_tokens: 1024,
-					top_p: 1,
-				});
-
-				const res = chatCompletion.choices[0].message.content;
-
-				*/
 				const res = '';
 				this.sendMessage({
 					command: "message",
@@ -94,48 +74,6 @@ export class CodeAgent {
 	}
 
 	async codeGen(goal: string) {
-		// FIXME
-		const _goal = `Write a function which can check whether the following string is valid or not.
-- "a" => true
-- "ab" => true
-- "abc" => true
-- "abd" => false
-- "aabbcc" => true
-- "aaabbbccc" => true
-- "aaabbbcccc" => false
-- "aabbccdd" => true
-- "aabbccdde" => false
-- "aaaaabbbbbcccccdddddeeeee" => true
-
-A string is valid if it has the same number of each character repeated in a sequence.
-And the characters in the sequence should be in incrementing alphabetical order.
-`;
-		/*
-		const context: AutoDebugContext = {
-			goal,
-			scratchpad: "",
-			history: [],
-		};
-		return new Promise<void>((resolve) => {
-			let code = 0;
-			const intervalId = setInterval(() => {
-				code++;
-        context.history.push({
-          code: `console.log(Math.pow(2, ${code}));`,
-        });
-
-				this.sendMessage({
-					command: "update-context",
-					context,
-				});
-			}, 100);
-
-			setTimeout(() => {
-				clearInterval(intervalId);
-				resolve();
-			}, 10000);
-		});
-    */
 
 		const onUpdateContext = (context: AutoDebugContext) => {
 			this.sendMessage({
@@ -156,35 +94,8 @@ And the characters in the sequence should be in incrementing alphabetical order.
 	}) {
 		let attempts = 0;
 
-		// const chatCompletion = await groq.chat.completions.create({
-		//     messages: [
-		//         { role: 'system', content: 'You are an expert software engineer with knowledge of debugging best practices.' },
-		//         { role: 'user', content: 'Explain the importance of low latency LLMs' }
-		//     ],
-		//     model: 'llama3-8b-8192',
-		// });
-		// console.log(chatCompletion.choices[0].message.content);
-
-		// const code = await writeCode('Explain the importance of low latency LLMs')
-
 		const context: AutoDebugContext = {
-			// goal: "Print 2 ^ 32 to console",
-			// 		goal: `Write a function which can check whether the following string is valid or not.
-			// - "abc" => true
-			// - "abd" => false
-			// - "aabbcc" => true
-			// - "aaabbbccc" => true
-			// - "aaabbbcccc" => false
-			// - "aabbccdd" => true
-			// - "aabbccdde" => false
-			// - "aaaaabbbbbcccccdddddeeeee" => true
-
-			// A string is valid if it has the same number of characters repeated in a sequence.
-			// And the characters in the sequence should be in increasing order.
-			// `,
 			goal,
-			// scratchpad: "",
-			// acceptanceCriterias: [],
 			history: [],
 		};
 
@@ -278,8 +189,8 @@ ${lastHistoryItem.code}
 Analysis:
 ${lastHistoryItem.analysis}
 `;
-
-		const taskStatusTool: CompletionCreateParams.Tool = {
+		// const taskStatusTool: CompletionCreateParams.Tool = {
+		const taskStatusTool: ChatCompletionTool = {
 			type: "function",
 			function: {
 				name: "task_status",
@@ -304,9 +215,9 @@ ${lastHistoryItem.analysis}
 				},
 			},
 		};
-
-		const askUserTool: CompletionCreateParams.Tool = {
-			type: "function",
+		// const askUserTool: CompletionCreateParams.Tool = {
+		const askUserTool: ChatCompletionTool = {
+			type: 'function',
 			function: {
 				name: "ask_user",
 				description: "Ask the user for more information.",
@@ -322,8 +233,8 @@ ${lastHistoryItem.analysis}
 				},
 			},
 		};
-
-		const tools: CompletionCreateParams.Tool[] = [askUserTool];
+		// const tools: CompletionCreateParams.Tool[] = [askUserTool];
+		const tools: ChatCompletionTool[] = [askUserTool];
 
 		if (context.history.length > 0) {
 			tools.push(taskStatusTool);
@@ -332,7 +243,8 @@ ${lastHistoryItem.analysis}
 			return Promise.resolve(true);
 		}
 
-		const chatCompletion = await groq.chat.completions.create({
+		// const chatCompletion = await groq.chat.completions.create({
+		const chatCompletion = await openai.chat.completions.create({
 			messages: [
 				{
 					role: "system",
@@ -340,29 +252,12 @@ ${lastHistoryItem.analysis}
 				},
 				{ role: "user", content: prompt },
 			],
-			// model: "llama3-8b-8192",
-			model: GroqModels.Llama3_70b,
-			//
-			// Optional parameters
-			//
-			// Controls randomness: lowering results in less random completions.
-			// As the temperature approaches zero, the model will become deterministic
-			// and repetitive.
+			model: fastModel,
 			temperature: 0.5,
-			// The maximum number of tokens to generate. Requests can use up to
-			// 2048 tokens shared between prompt and completion.
 			max_tokens: 1024,
-			// Controls diversity via nucleus sampling: 0.5 means half of all
-			// likelihood-weighted options are considered.
 			top_p: 1,
-			// A stop sequence is a predefined or user-specified text string that
-			// signals an AI to stop generating content, ensuring its responses
-			// remain focused and concise. Examples include punctuation marks and
-			// markers like "[end]".
-			// stop: null,
-			// If set, partial message deltas will be sent.
-			// stream: true,
-			tools,
+			// tools,
+			tools: tools,
 			seed,
 		});
 
@@ -370,20 +265,6 @@ ${lastHistoryItem.analysis}
 		console.log("task status", JSON.stringify(message, null, 2));
 
 		const { tool_calls: toolCalls = [] } = message;
-		/*
-    Example:
-    [
-        {
-        "id": "call_5cm8",
-        "type": "function",
-        "function": {
-            "name": "task_is_done",
-            "arguments": "{}"
-        }
-        }
-    ]
-    */
-		// loop through all tools
 		const taskStatusToolCall = toolCalls.find((toolCall) => {
 			return toolCall?.function?.name === "task_status";
 		});
@@ -398,61 +279,6 @@ ${lastHistoryItem.analysis}
 		return Promise.resolve(isDone);
 	}
 
-	/*
-async function createRootFunctionSignature(context: Context): Promise<string> {
-	const prompt = `What is the best JavaScript function signature (name and parameters)? Only output the function signature. Do not output any explanation or comments.
-
-Task: ${context.goal}`;
-
-	const chatCompletion = await groq.chat.completions.create({
-		messages: [
-			{
-				role: "system",
-				content:
-					"You are an expert software engineer with knowledge of debugging best practices.",
-			},
-			{ role: "user", content: prompt },
-		],
-		// model: "llama3-8b-8192",
-        model: GroqModels.Llama3_8b,
-		//
-		// Optional parameters
-		//
-		// Controls randomness: lowering results in less random completions.
-		// As the temperature approaches zero, the model will become deterministic
-		// and repetitive.
-		temperature: 0.5,
-		// The maximum number of tokens to generate. Requests can use up to
-		// 2048 tokens shared between prompt and completion.
-		max_tokens: 1024,
-		// Controls diversity via nucleus sampling: 0.5 means half of all
-		// likelihood-weighted options are considered.
-		top_p: 1,
-		// A stop sequence is a predefined or user-specified text string that
-		// signals an AI to stop generating content, ensuring its responses
-		// remain focused and concise. Examples include punctuation marks and
-		// markers like "[end]".
-		// stop: null,
-		// If set, partial message deltas will be sent.
-		// stream: true
-	});
-
-	const rawCode = chatCompletion.choices[0].message.content;
-
-	let code = rawCode;
-	if (code.startsWith("```")) {
-		code = code.substring(code.indexOf("\n") + 1);
-	}
-	if (code.endsWith("```")) {
-		code = code.substring(0, code.lastIndexOf("\n"));
-	}
-
-	return {
-		code,
-		result: undefined,
-	};
-}
-*/
 
 	async planProgram(context: AutoDebugContext): Promise<string> {
 		const prompt = `# Instructions
@@ -471,63 +297,13 @@ ${context.goal}`;
 			{ role: "user", content: prompt },
 		];
 
-// 		if (context.history.length > 0) {
-// 			const lastProgram = context.history[context.history.length - 1];
-// 			messages.push({
-// 				role: "assistant",
-// 				content: lastProgram.code,
-// 			});
-// 			messages.push({
-// 				role: "user",
-// 				content: `Result: ${lastProgram.result?.returnValue}
-// Stdout: ${lastProgram.result?.stdout}
-// Stderr: ${lastProgram.result?.stderr}
 
-// -----
-
-// Given this result, write an analysis of the code.
-// `,
-// 			});
-// 			messages.push({
-// 				role: "assistant",
-// 				content: `Analysis:
-// ${lastProgram.analysis}
-// `,
-// 			});
-// 			messages.push({
-// 				role: "user",
-// 				content: `Write an improved version of the code to fix the bugs and meet the acceptance criteria of the task.
-// Only output the code. Follow the instructions above.
-// `,
-// 			});
-// 		}
-
-		const chatCompletion = await groq.chat.completions.create({
+		const chatCompletion = await openai.chat.completions.create({
 			messages,
-			// model: "llama3-8b-8192",
-			// model: GroqModels.Llama3_8b,
-			// model: GroqModels.Llama3_70b,
 			model: fastModel,
-			//
-			// Optional parameters
-			//
-			// Controls randomness: lowering results in less random completions.
-			// As the temperature approaches zero, the model will become deterministic
-			// and repetitive.
 			temperature: 0.5,
-			// The maximum number of tokens to generate. Requests can use up to
-			// 2048 tokens shared between prompt and completion.
 			max_tokens: 1024,
-			// Controls diversity via nucleus sampling: 0.5 means half of all
-			// likelihood-weighted options are considered.
 			top_p: 1,
-			// A stop sequence is a predefined or user-specified text string that
-			// signals an AI to stop generating content, ensuring its responses
-			// remain focused and concise. Examples include punctuation marks and
-			// markers like "[end]".
-			// stop: null,
-			// If set, partial message deltas will be sent.
-			// stream: true
 			seed,
 		});
 
@@ -607,32 +383,12 @@ Only output the code. Follow the instructions above.
 			});
 		}
 
-		const chatCompletion = await groq.chat.completions.create({
+		const chatCompletion = await openai.chat.completions.create({
 			messages,
-			// model: "llama3-8b-8192",
-			// model: GroqModels.Llama3_8b,
-			// model: GroqModels.Llama3_70b,
 			model: fastModel,
-			//
-			// Optional parameters
-			//
-			// Controls randomness: lowering results in less random completions.
-			// As the temperature approaches zero, the model will become deterministic
-			// and repetitive.
 			temperature: 0.5,
-			// The maximum number of tokens to generate. Requests can use up to
-			// 2048 tokens shared between prompt and completion.
 			max_tokens: 1024,
-			// Controls diversity via nucleus sampling: 0.5 means half of all
-			// likelihood-weighted options are considered.
 			top_p: 1,
-			// A stop sequence is a predefined or user-specified text string that
-			// signals an AI to stop generating content, ensuring its responses
-			// remain focused and concise. Examples include punctuation marks and
-			// markers like "[end]".
-			// stop: null,
-			// If set, partial message deltas will be sent.
-			// stream: true
 			seed,
 		});
 
@@ -654,11 +410,6 @@ Only output the code. Follow the instructions above.
 			result: undefined,
 		};
 
-		// for await (const chunk of stream) {
-		//     process.stdout.write(chunk.choices[0]?.delta?.content || '');
-		// }
-		// const result = await promise;
-		// console.log(result);
 	}
 
 	async executeProgram(program: Program): Promise<ExecutionResult> {
@@ -744,14 +495,9 @@ Stderr:
 ${lastProgram.result.stderr}
 \`\`\`
 `;
-		// Return Value:
-		// \`\`\`
-		// ${lastProgram.result.returnValue}
-		// \`\`\`
-
 		console.log(prompt);
 
-		const chatCompletion = await groq.chat.completions.create({
+		const chatCompletion = await openai.chat.completions.create({
 			messages: [
 				{
 					role: "system",
@@ -759,30 +505,10 @@ ${lastProgram.result.stderr}
 				},
 				{ role: "user", content: prompt },
 			],
-			// model: "llama3-8b-8192",
-			// model: GroqModels.Llama3_70b,
 			model: fastModel,
-			// model: GroqModels.Llama3_8b,
-			//
-			// Optional parameters
-			//
-			// Controls randomness: lowering results in less random completions.
-			// As the temperature approaches zero, the model will become deterministic
-			// and repetitive.
 			temperature: 0.5,
-			// The maximum number of tokens to generate. Requests can use up to
-			// 2048 tokens shared between prompt and completion.
 			max_tokens: 1024,
-			// Controls diversity via nucleus sampling: 0.5 means half of all
-			// likelihood-weighted options are considered.
 			top_p: 1,
-			// A stop sequence is a predefined or user-specified text string that
-			// signals an AI to stop generating content, ensuring its responses
-			// remain focused and concise. Examples include punctuation marks and
-			// markers like "[end]".
-			// stop: null,
-			// If set, partial message deltas will be sent.
-			// stream: true
 			seed,
 		});
 
