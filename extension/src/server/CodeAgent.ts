@@ -12,7 +12,7 @@ import {
 	type ExecutionResult,
 } from "../view/app/model";
 
-const OPENAI_API_KEY = 'sk-proj-qV5raJmrdu0csdMKsocVT3BlbkFJSLzXKdkbT0NATPjpyeGU'
+const OPENAI_API_KEY = 'sk-proj-RGrZwKSykMrwpicQpUdyT3BlbkFJOldKiy9oeGU74P33vETG'
 const GROQ_API_KEY = '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'
 const seed = 42;
 const maxSteps = 10;
@@ -28,6 +28,7 @@ const openai = new OpenAI({
 const GPTmodel = 'gpt-4o-2024-05-13';
 const Groqmodel = GroqModels.Llama3_70b;
 const fastModel = GPTmodel;
+
 
 function printBanner(title: string) {
 	console.log(`\n\n${"=".repeat(20)} ${title} ${"=".repeat(20)}`);
@@ -51,34 +52,109 @@ export class CodeAgent {
 
 	public async onReceiveMessage(message: any) {
 		console.log("CodeAgent received message:", message);
-
+	
 		switch (message.command) {
 			case "message": {
 				const userMessage: Message = { type: "user", text: message.text };
 				this.messages.push(userMessage);
-
+	
 				const prompt = message.text;
+	
+				const checkIfGenCode: ChatCompletionTool = {
+					type: "function",
+					function: {
+						name: "check_if_gen_code",
+						description: "Determine whether we need to generate code based on the user prompt.",
+						parameters: {
+							type: "object",
+							properties: {
+								status: {
+									type: "string",
+									description: "The status of the task.",
+									enum: ["yes", "no"],
+								},
+							},
+							required: ["status"],
+						},
+					},
+				};
 
-				const res = '';
-				this.sendMessage({
-					command: "message",
-					text: res,
+				// Check if we need to generate code
+				const checkPrompt = `Determine whether we need to generate code based on the user prompt: "${prompt}"`;
+				const checkCompletion = await openai.chat.completions.create({
+					messages: [
+						{
+							role: "system",
+							content: this.persona,
+						},
+						{ role: "user", content: checkPrompt },
+					],
+					model: fastModel,
+					temperature: 0.5,
+					max_tokens: 1024,
+					top_p: 1,
+					tools: [checkIfGenCode],
+					seed,
 				});
+	
+				const checkMessage = checkCompletion.choices[0].message;
+				const { tool_calls: toolCalls = [] } = checkMessage;
+				const checkToolCall = toolCalls.find((toolCall) => {
+					return toolCall?.function?.name === "check_if_gen_code";
+				});
+	
+				if (!checkToolCall) {
+					throw new Error("check_if_gen_code tool not called");
+				}
+	
+				const shouldGenCode = JSON.parse(checkToolCall?.function?.arguments || "{}")?.status === "yes";
+	
+				if (shouldGenCode) {
+					await this.codeGen(prompt);
+					console.log("codeGen done");
+				} else {
+					// Generate a response using the model
+					const responseCompletion = await openai.chat.completions.create({
+						messages: [
+							{
+								role: "system",
+								content: this.persona,
+							},
+							{ role: "user", content: prompt },
+						],
+						model: fastModel,
+						temperature: 0.5,
+						max_tokens: 1024,
+						top_p: 1,
+						seed,
+					});
+	
+					const responseMessage = responseCompletion.choices[0].message.content;
+					let isCodeGen = false; // Set the value of isCodeGen
 
-				await this.codeGen(prompt);
-				console.log("codeGen done");
-
+					this.sendMessage({
+						command: "message",
+						text: responseMessage,
+						meta: {
+							isCodeGen: isCodeGen, // Pass the value of isCodeGen as a separate object
+						},
+					});
+\				}
+	
 				break;
 			}
 		}
 	}
 
 	async codeGen(goal: string) {
-
+		let isCodeGen = true; // Set the value of isCodeGen
 		const onUpdateContext = (context: AutoDebugContext) => {
 			this.sendMessage({
 				command: "update-context",
 				context,
+				meta: {
+					isCodeGen: isCodeGen, // Pass the value of isCodeGen as a separate object
+				},
 			});
 		};
 
@@ -189,7 +265,7 @@ ${lastHistoryItem.code}
 Analysis:
 ${lastHistoryItem.analysis}
 `;
-		// const taskStatusTool: CompletionCreateParams.Tool = {
+
 		const taskStatusTool: ChatCompletionTool = {
 			type: "function",
 			function: {

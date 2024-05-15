@@ -6,10 +6,9 @@ import { monokaiDimmed } from "@uiw/codemirror-theme-monokai-dimmed";
 import { EditorView } from "@codemirror/view";
 import ReactMarkdown from 'react-markdown';
 // import { llamaImage } from './llama.jpg';
-
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
-import type { AutoDebugContext, Message, UserMessage } from "./model";
+import type { AutoDebugContext, Message, UserMessage, isCodeGen } from "./model";
 
 type ChatProps = {
 	messages: Message[];
@@ -34,7 +33,6 @@ export default function Chat({
 	const [counter, setCounter] = useState(0);
     const [isActive, setIsActive] = useState(true); // State to control the interval
 	const [historyIndex, setHistoryIndex] = useState<number>(-1);
-	const [isExpanded, setIsExpanded] = useState(false);
 
 	useEffect(() => {
 		if (inputRef.current) {
@@ -43,6 +41,8 @@ export default function Chat({
 	}, []);
 
     useEffect(() => {
+        console.log("Chat messages updated:", chatMessages); // Log chat messages
+
         if (!isActive) {
             return; // If not active, do nothing (effectively pausing the interval)
         }
@@ -79,9 +79,6 @@ export default function Chat({
 
 	return (
 		<div className="flex h-screen w-full flex-col bg-[#1e1e1e]">
-			{" "}
-			{/* Changed background color */}
-			{/* Header and other components remain unchanged */}
 			<div className="flex-1 overflow-auto p-4">
 				{chatMessages.map((message, index) => {
 					let lastHistoryItem: any;
@@ -110,37 +107,38 @@ export default function Chat({
 							<div className="max-w-[75%] space-y-2">
 								{message.type === "assistant" && (
 									<>
-										<div className="flex items-center text-white mb-1">
-											{/* <span>Thinking [{timeDiff.toFixed(1)} sec]</span> */}
-											{counter > 0 && <span>Thinking [{counter.toFixed(1)} sec]</span>}
-											{status && (
-												<span className="ml-4">
-													Status: {status}
+										{message.meta?.isCodeGen && (
+											<div className="flex items-center text-white mb-1">
+												{counter > 0 && <span>Thinking [{counter.toFixed(1)} sec]</span>}
+												{status && (
+													<span className="ml-4">
+														Status: {status}
+													</span>
+												)}
+												<span className="text-white mx-4 flex-1 text-right">
+													Step:{" "}
+													{historyIndex < 0 ? history.length : (historyIndex + 1)} of{" "}
+													{history.length}
 												</span>
-											)}
-											<span className="text-white mx-4 flex-1 text-right">
-												Step:{" "}
-												{historyIndex < 0 ? history.length : (historyIndex + 1)} of{" "}
-												{history.length}
-											</span>
-											<div className="flex">
-												<button
-													onClick={() => setHistoryIndex((prev) => Math.max(prev - 1, 0))} // Decrement index, stop at 0
-													className="bg-blue-300 hover:bg-blue-400 text-gray-800 font-bold py-1 px-2 rounded-l"
-													style={{ marginRight: "8px" }}
-												>
-													&lt;
-												</button>
-												<button
-													onClick={() =>
-														setHistoryIndex((prev) => Math.min(prev + 1, history.length - 1))
-													} // Increment index, stop at max index
-													className="bg-blue-300 hover:bg-blue-400 text-gray-800 font-bold py-1 px-2 rounded-r"
-												>
-													&gt;
-												</button>
+												<div className="flex">
+													<button
+														onClick={() => setHistoryIndex((prev) => Math.max(prev - 1, 0))} // Decrement index, stop at 0
+														className="bg-blue-300 hover:bg-blue-400 text-gray-800 font-bold py-1 px-2 rounded-l"
+														style={{ marginRight: "8px" }}
+													>
+														&lt;
+													</button>
+													<button
+														onClick={() =>
+															setHistoryIndex((prev) => Math.min(prev + 1, history.length - 1))
+														} // Increment index, stop at max index
+														className="bg-blue-300 hover:bg-blue-400 text-gray-800 font-bold py-1 px-2 rounded-r"
+													>
+														&gt;
+													</button>
+												</div>
 											</div>
-										</div>
+										)}
 									</>
 								)}
 
@@ -164,17 +162,7 @@ export default function Chat({
 				{" "}
 				{/* Adjusted footer background */}
 				<form ref={formRef} onSubmit={onSubmit}>
-				<form ref={formRef} onSubmit={onSubmit}>
 					<div className="flex items-center gap-2">
-						{/*
-						<Input
-							className="flex-1 bg-[#1e1e1e] focus:outline-none text-white" // Set background color to match the chat area
-							placeholder="Type your message..."
-							type="text"
-							value={input}
-							onChange={(e) => setInput(e.target.value)}
-						/>
-						*/}
 						<Textarea
 							className="flex-1 bg-[#1e1e1e] focus:outline-none text-white"
 							placeholder="Type your message..."
@@ -208,9 +196,7 @@ function ShowAutoDebugging({
 }: { context: AutoDebugContext }): React.ReactNode {
 	const { history } = context;
 	const [historyIndex, setHistoryIndex] = useState<number>(-1);
-	// const lastHistoryItem = history[history.length - 1];
-	const lastHistoryItem =
-		history[historyIndex < 0 ? history.length - 1 : historyIndex];
+	const lastHistoryItem = history[historyIndex < 0 ? history.length - 1 : historyIndex];
 	const newCode = lastHistoryItem.code;
 	const [isExpanded, setIsExpanded] = useState(false);
 
@@ -226,15 +212,6 @@ function ShowAutoDebugging({
 				]}
 				theme={monokaiDimmed}
 			/>
-
-			{/* <pre className="whitespace-pre-wrap">
-				{lastHistoryItem.result?.stdout}
-			</pre>
-			<pre className="whitespace-pre-wrap">
-				{lastHistoryItem.result?.stderr}
-			</pre> */}
-
-			{/* <pre className="whitespace-pre-wrap">{lastHistoryItem.plan}</pre> */}
 
 			{lastHistoryItem.result && (
 				<>
