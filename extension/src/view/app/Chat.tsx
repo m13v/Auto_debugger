@@ -164,6 +164,7 @@ export default function Chat({
 				{" "}
 				{/* Adjusted footer background */}
 				<form ref={formRef} onSubmit={onSubmit}>
+				<form ref={formRef} onSubmit={onSubmit}>
 					<div className="flex items-center gap-2">
 						{/*
 						<Input
