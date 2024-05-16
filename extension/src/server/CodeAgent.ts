@@ -11,9 +11,14 @@ import {
 	type Program,
 	type ExecutionResult,
 } from "../view/app/model";
+import dotenv from 'dotenv';
+import * as vscode from 'vscode';
 
-const OPENAI_API_KEY = 'sk-proj-RGrZwKSykMrwpicQpUdyT3BlbkFJOldKiy9oeGU74P33vETG'
-const GROQ_API_KEY = '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'
+dotenv.config();
+
+const OPENAI_API_KEY = vscode.workspace.getConfiguration().get<string>('yourExtension.apiKey');
+const GROQ_API_KEY = process.env.GROQ_API_KEY ?? ''
+
 const seed = 42;
 const maxSteps = 10;
 
@@ -110,6 +115,14 @@ export class CodeAgent {
 				const shouldGenCode = JSON.parse(checkToolCall?.function?.arguments || "{}")?.status === "yes";
 	
 				if (shouldGenCode) {
+					const prompt = message.text;
+
+					const res = '';
+					this.sendMessage({
+						command: "message",
+						text: res,
+					});
+
 					await this.codeGen(prompt);
 					console.log("codeGen done");
 				} else {
@@ -139,7 +152,7 @@ export class CodeAgent {
 							isCodeGen: isCodeGen, // Pass the value of isCodeGen as a separate object
 						},
 					});
-\				}
+				}
 	
 				break;
 			}

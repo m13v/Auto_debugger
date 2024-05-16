@@ -32,13 +32,14 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
 				}
 				case "update-context": {
 					const { context } = event.data;
-					console.log("CONFIG: update-context"); // Log the context update
+					console.log("CONFIG: update-context: context=", context); // Log the context update
 					// const { history } = context;
 					// const lastHistoryItem = history[history.length - 1];
 					// const newCode = lastHistoryItem.code;
 
 					setMessages((prevMessages) => {
 						const lastMessage = prevMessages[prevMessages.length - 1];
+						console.log("CONFIG: prevMessages=", prevMessages); // Log the context update
 						if (lastMessage && lastMessage.type === "assistant") {
 							const updatedMessage: AssistantMessage = {
 								type: "assistant",
@@ -46,7 +47,7 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
 								meta: event.data.meta || {}, // Provide a default value for meta
 								context,
 							};
-
+							
 							return [...prevMessages.slice(0, -1), updatedMessage];
 						}
 						return prevMessages; // Return previous messages unchanged if no update is needed

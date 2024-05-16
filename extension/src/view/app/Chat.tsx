@@ -33,6 +33,7 @@ export default function Chat({
 	const [counter, setCounter] = useState(0);
     const [isActive, setIsActive] = useState(true); // State to control the interval
 	const [historyIndex, setHistoryIndex] = useState<number>(-1);
+	const [currentMessageIndex, setCurrentMessageIndex] = useState<number | null>(null);
 
 	useEffect(() => {
 		if (inputRef.current) {
@@ -71,8 +72,9 @@ export default function Chat({
             setInput("");
             setCounter(() => 0);
             setIsActive(true); // Optionally reset the interval when sending a message
-        },
-        [input, onSendMessage]
+			setCurrentMessageIndex(chatMessages.length); // Set the current message index to the new message
+		},
+		[input, onSendMessage, chatMessages.length]
     );
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -82,13 +84,12 @@ export default function Chat({
 			<div className="flex-1 overflow-auto p-4">
 				{chatMessages.map((message, index) => {
 					let lastHistoryItem: any;
-					let status: string = 'Incomplete';
+					let status: string = 'debugging...';
 					if ("context" in message && message?.context?.history && message.context.history.length > 0) {
 						lastHistoryItem =
 							message.context.history[message.context.history.length - 1];
-						status = lastHistoryItem?.status ?? 'Incomplete';
+						status = lastHistoryItem?.status ?? 'debugging...';
 					}
-					// const timeDiff = startDateTime ? new Date().getTime() - startDateTime.getTime() : 0;
 					return (
 						<div
 							key={index}
@@ -109,10 +110,10 @@ export default function Chat({
 									<>
 										{message.meta?.isCodeGen && (
 											<div className="flex items-center text-white mb-1">
-												{counter > 0 && <span>Thinking [{counter.toFixed(1)} sec]</span>}
+												{index === (currentMessageIndex+1) && counter > 0 && <span>Thinking [{counter.toFixed(1)} sec]</span>}
 												{status && (
 													<span className="ml-4">
-														Status: {status}
+														Status: {status === 'complete' ? `Complete ✅` : status}
 													</span>
 												)}
 												<span className="text-white mx-4 flex-1 text-right">
