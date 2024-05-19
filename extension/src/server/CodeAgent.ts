@@ -92,6 +92,7 @@ export class CodeAgent {
 				});
 				const codeSnippets = checkMessage.content?.match(/```(.*?)```/gs);
 			 
+				
 				if (codeSnippets) {
 					for (const snippet of codeSnippets) {
 						let code = snippet;
