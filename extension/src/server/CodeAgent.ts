@@ -52,7 +52,7 @@ export class CodeAgent {
 	private messages: Message[] = [];
 
 	private persona =
-		"You are an expert software engineer with knowledge of debugging best practices. You write JavaScript/Node.js code.";
+		"You are an expert software engineer assistant";
 
 	constructor({ postMessage }: { postMessage: postMessage }) {
 		this.postMessage = postMessage;
@@ -144,6 +144,9 @@ export class CodeAgent {
 											}
 										}
 									})
+									.on('error', (error) => {
+										console.error('Error:', error);
+									});
 									.on('end', () => {
 										this.sendMessage({
 											command: "message",
