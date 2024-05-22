@@ -1,20 +1,44 @@
 from openai import OpenAI
 from typing_extensions import override
 from openai import AssistantEventHandler
+from e2b_inst_exec import execute_code
+import json
+import re
+from openai_client import openai_client_instance
 
 def run_code_interpreter(content: str):
-    client = OpenAI()
+    client = openai_client_instance
 
     my_assistant = client.beta.assistants.create(
-        instructions="You are a python code interpreter. When given code, you run the code to see if it compiles, functions as expected, and produces results relevant to user prompt. If it does not you iterate over logs until it runs as expected",
-        name="Python interpreter",
+        instructions="""
+        You are a code interpreter. Write commands to obtain all necessary keys, list commands to run all necessary installations, details the code to execute, show output.
+        When given code, you run the code to see if it compiles, functions as expected, and produces results relevant to user prompt. If it does not you iterate over logs until it runs as expected.
+        Explicitly hard-code all keys in the script.
+        Structure return results in the following format: 
+        Response description,
+        ```bash
+        # <command>
+        # <command>
+        # <command>
+        ```
+        ```<programming language> (for example python or javascript)
+        # <code>
+        # <code>
+        # <code>
+        ```
+        ### Sample Terminal Output
+        ```plaintext
+        # <output>
+        # <output>
+        # <output>
+        ```
+        """,
+        name="Code interpreter",
         tools=[{"type": "code_interpreter"}],
         model="gpt-4o-2024-05-13",
     )
-    print(f"\nAssistant created:", my_assistant)
 
     thread = client.beta.threads.create()
-    print(f"\nThread created:", thread)
 
     message = client.beta.threads.messages.create(
         thread_id=thread.id,
@@ -23,58 +47,63 @@ def run_code_interpreter(content: str):
     )
     print("Message created:", message)
 
-    class EventHandler(AssistantEventHandler):    
-        @override
-        def on_text_created(self, text) -> None:
-            print(f"\nassistant > ", end="", flush=True)
-          
-        @override
-        def on_text_delta(self, delta, snapshot):
-            print(delta.value, end="", flush=True)
-          
-        def on_tool_call_created(self, tool_call):
-            print(f"\nassistant > {tool_call.type}\n", flush=True)
-      
-        def on_tool_call_delta(self, delta, snapshot):
-            if delta.type == 'code_interpreter':
-                if delta.code_interpreter.input:
-                    print(delta.code_interpreter.input, end="", flush=True)
-                if delta.code_interpreter.outputs:
-                    print(f"\n\noutput >", flush=True)
-                    for output in delta.code_interpreter.outputs:
-                        if output.type == "logs":
-                            print(f"\n{output.logs}", flush=True)
+    response_text = ""
 
-    print("Starting response stream...")
+    print(f"\nStarting response stream...")
     with client.beta.threads.runs.stream(
         thread_id=thread.id,
         assistant_id=my_assistant.id,
-        event_handler=EventHandler(),
     ) as stream:
-        stream.until_done()
+        for event in stream:
+            # print(f"Event received: {event}")
+            if event.event == 'thread.message.delta':
+                for delta in event.data.delta.content:
+                    if delta.type == 'text':
+                        response_text += delta.text.value
+                        print(delta.text.value, end="", flush=True)
+            elif event.event == 'thread.message.created':
+                if event.data.content:
+                    for content in event.data.content:
+                        if content.type == 'text':
+                            response_text += content.text.value
+                            print(content.text.value, end="", flush=True)
+            elif event.event == 'thread.run.completed':
+                break
     print("Response stream completed.")
 
+    model_response = response_text
+
+    # Extract shell commands
+    shell_commands_match = re.search(r'```bash(.*?)```', model_response, re.DOTALL)
+    shell_commands = shell_commands_match.group(1).strip() if shell_commands_match else ""
+
+    # Extract script
+    script_match = re.search(r'```python(.*?)```', model_response, re.DOTALL)
+    script = script_match.group(1).strip() if script_match else ""
+
+    # Extract sample terminal output
+    terminal_output_match = re.search(r'```plaintext(.*?)```', model_response, re.DOTALL)
+    terminal_output = terminal_output_match.group(1).strip() if terminal_output_match else ""
+
+    execution_result = ""
+
+    if shell_commands and script:
+        # Call execute_code and add the results to the JSON
+        print("SHELL=", shell_commands)
+        print("SCRIPT=", script)
+        execution_result = execute_code(shell_commands, script)
+    else:
+        print("Python blocks not found in the response.")
+    
+    return my_assistant.id, thread.id, model_response, execution_result
 # Example usage
-content = """
-name = "Alice"
-age = 30
+# content = """
+# Write a Python script that uses AWS S3 to upload, download, and list objects in a specified bucket. The script should handle authentication and error handling
+# """
 
-# Function to greet a person
-def greet(person_name):
-    print(f"Hello, {person_name}!")
+# result = run_code_interpreter(content)
+# print(result)
 
-# Conditional statement
-if age > 18:
-    print(f"{name} is an adult.")
-else:
-    print(f"{name} is not an adult.")
+# Write a Python script that uses AWS S3 to upload, download, and list objects in a specified bucket. The script should handle authentication and error handling
+# Implement a JavaScript function that counts the number of vowels in a given string. PLAINFORMAT
 
-# Loop to print numbers from 1 to 5
-for i in range(1, 6):
-    print(i)
-
-# Calling the function
-greet(name)
-"""
-
-run_code_interpreter(content)
