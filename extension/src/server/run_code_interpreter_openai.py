@@ -1,9 +1,7 @@
 from openai import OpenAI
 from typing_extensions import override
 from openai import AssistantEventHandler
-from e2b_inst_exec import execute_code
-import json
-import re
+
 from openai_client import openai_client_instance
 
 def run_code_interpreter(content: str):
@@ -69,33 +67,11 @@ def run_code_interpreter(content: str):
                             print(content.text.value, end="", flush=True)
             elif event.event == 'thread.run.completed':
                 break
-    print("Response stream completed.")
+    print("\nResponse stream completed.")
 
     model_response = response_text
-
-    # Extract shell commands
-    shell_commands_match = re.search(r'```bash(.*?)```', model_response, re.DOTALL)
-    shell_commands = shell_commands_match.group(1).strip() if shell_commands_match else ""
-
-    # Extract script
-    script_match = re.search(r'```python(.*?)```', model_response, re.DOTALL)
-    script = script_match.group(1).strip() if script_match else ""
-
-    # Extract sample terminal output
-    terminal_output_match = re.search(r'```plaintext(.*?)```', model_response, re.DOTALL)
-    terminal_output = terminal_output_match.group(1).strip() if terminal_output_match else ""
-
-    execution_result = ""
-
-    if shell_commands and script:
-        # Call execute_code and add the results to the JSON
-        print("SHELL=", shell_commands)
-        print("SCRIPT=", script)
-        execution_result = execute_code(shell_commands, script)
-    else:
-        print("Python blocks not found in the response.")
     
-    return my_assistant.id, thread.id, model_response, execution_result
+    return my_assistant.id, thread.id, model_response
 # Example usage
 # content = """
 # Write a Python script that uses AWS S3 to upload, download, and list objects in a specified bucket. The script should handle authentication and error handling
