@@ -4,6 +4,7 @@ from e2b_inst_exec import prepare_script_execution
 from e2b_inst_exec import initialize_sandbox
 from new_iteration import new_iteration
 import json
+import sys
 
 def auto_debugger(prompt):
     total_iterations = 10
@@ -11,7 +12,7 @@ def auto_debugger(prompt):
     assistant_id, thread_id, model_response = run_code_interpreter(prompt)
     if "```python" in model_response:
         sandbox = initialize_sandbox()
-        execution_result_filtered = json.dumps(prepare_script_execution(sandbox, model_response))
+        execution_result_filtered = json.dumps(prepare_script_execution(sandbox, model_response)) if 'execution_result_filtered' in locals() else None
 
     iteration_data = {
         "assistant_id": assistant_id,
@@ -101,6 +102,12 @@ def auto_debugger(prompt):
             })
     print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ITERATION LOOP PASSED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     return "autodebuggin finished", iteration_data
+
+if __name__ == "__main__":
+    prompt = sys.argv[1] if len(sys.argv) > 1 else ""
+    result, iteration_data = auto_debugger(prompt)
+    print({k: str(v)[:10] for k, v in iteration_data.items()})
+    print(result)
 
 # prompt = """
 # HI THERE
