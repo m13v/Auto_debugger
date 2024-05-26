@@ -53,6 +53,24 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
 						return prevMessages; // Return previous messages unchanged if no update is needed
 					});
 				}
+				case "stream-message": {
+					const streamData = event.data.text;
+					console.log("CONFIG: stream-message"); // Log the stream message
+					setMessages((prevMessages) => {
+						const lastMessage = prevMessages[prevMessages.length - 1];
+						if (lastMessage && lastMessage.type === "assistant") {
+							const updatedMessage: AssistantMessage = {
+								type: "assistant",
+								text: lastMessage.text + streamData, // Append stream data to the last message
+								meta: event.data.meta || {} as any, // Provide a default value for meta
+								context: lastMessage.context,
+							};
+							return [...prevMessages.slice(0, -1), updatedMessage];
+						}
+						return prevMessages; // Return previous messages unchanged if no update is needed
+					});
+					break;
+				}
 			}
 		};
 		window.addEventListener("message", handleMessage);

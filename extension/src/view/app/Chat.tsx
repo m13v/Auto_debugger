@@ -35,7 +35,6 @@ export default function Chat({
     const [isActive, setIsActive] = useState(true); // State to control the interval
 	const [historyIndex, setHistoryIndex] = useState<number>(-1);
 	const [currentMessageIndex, setCurrentMessageIndex] = useState<number | null>(null);
-	const [streamingMessage, setStreamingMessage] = useState<string>("");
 
 	useEffect(() => {
 		if (inputRef.current) {
@@ -78,18 +77,6 @@ export default function Chat({
 		},
 		[input, onSendMessage, chatMessages.length]
     );
-
-	useEffect(() => {
-		// Simulate receiving a stream message
-		const streamMessage = { text: "New stream message" };
-		handleStreamMessage(streamMessage);
-	}, []);
-
-	const handleStreamMessage = (message: { text: string }) => {
-		setStreamingMessage((prev) => prev + message.text);
-		setCounter(0); // Reset the counter on receiving a new stream message
-		setIsActive(true); // Ensure the interval is active
-	};
 
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -162,10 +149,7 @@ export default function Chat({
 										message.type === "user" ? "bg-blue-500" : "bg-gray-900"
 									} p-1 text-white`}
 								>
-									{/* <pre className="whitespace-pre-wrap">{message.text}</pre> */}
-									<div className="rounded-lg bg-gray-900 p-1 text-white">
-										<pre className="whitespace-pre-wrap">{streamingMessage}</pre>
-									</div>
+									<pre className="whitespace-pre-wrap">{message.text}</pre>
 									{message.type === "assistant" && message.context && (
 										<ShowAutoDebugging context={message.context} />
 									)}

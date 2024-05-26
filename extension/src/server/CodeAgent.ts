@@ -77,12 +77,13 @@ export class CodeAgent {
 
 				const promptMessage = prompt;
 
-				const responseMessage = "test message from server (1)";
+				const responseMessage = "Steam:";
 
 				this.sendMessage({
 				  command: "message",
 				  text: responseMessage,
-				} as any);
+				});
+					
 				const process = spawn('python', ['src/server/debugging_logic.py', promptMessage], { stdio: ['inherit', 'pipe', 'pipe'], cwd: require('path').resolve(__dirname, '../../') });
 				// const process = spawn('python', ['src/server/debugging_logic.py', promptMessage], { stdio: ['inherit', 'pipe', 'pipe'], cwd: path.resolve(__dirname, '../../') });
 				// const process = spawn('python', ['src/server/debugging_logic.py', promptMessage], { stdio: ['inherit', 'pipe', 'pipe'], cwd: __dirname });
@@ -90,7 +91,7 @@ export class CodeAgent {
 				process.stdout.on('data', (data) => {
 					console.log(`stdout: ${data.toString()}`);
 					this.sendMessage({
-					  command: "message",
+					  command: "stream-message",
 					  text: data.toString(),
 					});
 				  });
@@ -98,7 +99,7 @@ export class CodeAgent {
 				  process.stderr.on('data', (data) => {
 					console.error(`stderr: ${data.toString()}`);
 					this.sendMessage({
-					  command: "message",
+					  command: "stream-message",
 					  text: data.toString(),
 					});
 				  });
@@ -106,7 +107,7 @@ export class CodeAgent {
 				  process.on('close', (code) => {
 					console.log(`Process exited with code ${code}`);
 					this.sendMessage({
-					  command: "message",
+					  command: "stream-message",
 					  text: `Process exited with code ${code}`,
 					});
 				  });
