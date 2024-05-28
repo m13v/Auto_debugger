@@ -4,7 +4,7 @@ from openai import AssistantEventHandler
 
 from openai_client import openai_client_instance
 
-def run_code_interpreter(content: str):
+async def run_code_interpreter(content: str):
     client = openai_client_instance
 
     my_assistant = client.beta.assistants.create(
@@ -59,19 +59,22 @@ def run_code_interpreter(content: str):
                     if delta.type == 'text':
                         response_text += delta.text.value
                         print(delta.text.value, end="", flush=True)
+                        yield delta.text.value
             elif event.event == 'thread.message.created':
                 if event.data.content:
                     for content in event.data.content:
                         if content.type == 'text':
                             response_text += content.text.value
                             print(content.text.value, end="", flush=True)
+                            yield content.text.value
             elif event.event == 'thread.run.completed':
                 break
     print("\nResponse stream completed.")
 
     model_response = response_text
-    
-    return my_assistant.id, thread.id, model_response
+    yield my_assistant.id, thread.id, model_response
+    raise StopAsyncIteration    
+    # return my_assistant.id, thread.id, model_response
 # Example usage
 # content = """
 # Write a Python script that uses AWS S3 to upload, download, and list objects in a specified bucket. The script should handle authentication and error handling

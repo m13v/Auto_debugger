@@ -64,6 +64,7 @@ export type UserMessage = {
 export type AssistantMessage = {
 	type: "assistant";
 	text: string;
+	iteration_data?: JSON;
 	context?: AutoDebugContext;
 	meta?: {
 		isCodeGen: isCodeGen;

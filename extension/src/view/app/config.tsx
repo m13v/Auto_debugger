@@ -62,6 +62,7 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
 							const updatedMessage: AssistantMessage = {
 								type: "assistant",
 								text: lastMessage.text + streamData, // Append stream data to the last message
+								iteration_data: event.data.iteration_data,
 								meta: event.data.meta || {} as any, // Provide a default value for meta
 								context: lastMessage.context,
 							};

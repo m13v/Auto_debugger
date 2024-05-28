@@ -3,28 +3,60 @@ from short_model_response import short_model_response
 from e2b_inst_exec import prepare_script_execution
 from e2b_inst_exec import initialize_sandbox
 from new_iteration import new_iteration
+import asyncio
+import websockets
 import json
 import sys
 
-def auto_debugger(prompt):
+async def send_iteration_data(prompt):
+    uri = "ws://localhost:8765"
+    async with websockets.connect(uri) as websocket:
+        result, iteration_data = await auto_debugger(prompt, websocket)
+        await websocket.send(json.dumps({"status": result, "iteration_data": iteration_data}))
+
+async def auto_debugger(prompt, websocket):
+# def auto_debugger(prompt):
     total_iterations = 10
-    iteration_data = []
-    assistant_id, thread_id, model_response = run_code_interpreter(prompt)
+
+    iteration_data = {
+        "assistant_id": "",
+        "thread_id": "",
+        "first_model_response": "",
+        "model_response_without_code": "",
+        "first_execution_result_filtered": "",
+        "iterations": []
+    }
+
+    async for interim_result in run_code_interpreter(prompt):
+        iteration_data["first_model_response"] += interim_result
+        await websocket.send(json.dumps({"iteration_data": iteration_data}))
+
+    # Collect the final result after the streaming is done
+    final_result = await run_code_interpreter(prompt).__anext__()
+    assistant_id, thread_id, model_response = final_result
+    model_response_without_code = model_response
+
     if "```python" in model_response:
         sandbox = initialize_sandbox()
-        execution_result_filtered = json.dumps(prepare_script_execution(sandbox, model_response)) if 'execution_result_filtered' in locals() else None
+        execution_result_filtered, model_response_without_code = json.dumps(prepare_script_execution(sandbox, model_response)) if 'execution_result_filtered' in locals() else None
 
     iteration_data = {
         "assistant_id": assistant_id,
         "thread_id": thread_id,
         "first_model_response": model_response,
+        "model_response_without_code": model_response_without_code,
         "first_execution_result_filtered": execution_result_filtered if 'execution_result_filtered' in locals() else None,
         "iterations": []
     }
-    print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FIRST STEP DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+
+    # await websocket.send(json.dumps({"iteration_data": iteration_data}))
+
+    print("await websocket message sent")
+
+    print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FIRST EXECUTION DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     if 'execution_result_filtered' in locals() and execution_result_filtered and execution_result_filtered != '""':
         for i in range(total_iterations):
-            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ITERATION %d DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!' % i)
+            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ITERATION %d STARTED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!' % i)
             iteration_data["iterations"].append({
                 "index": i
             })
@@ -46,25 +78,25 @@ def auto_debugger(prompt):
                 Did we make progress compared to the last iteration? IMPORTANT INSTRUCTIONS: You must respond with one word: "yes" or "no".
                 """
                 comparison_results1 = short_model_response(compare_results1, assistant_id, thread_id)
-                print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! COMPARISON 1 DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Did we make progress? - DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 iteration_data["iterations"][-1].update({
-                    "comparison_results1": comparison_results1
+                    "made_progress": comparison_results1
                 })
                 compare_results2 = """
                 Why none of the solutions worked? IMPORTANT INSTRUCTIONS: You must respond with one paragraph
                 """
                 comparison_results2 = short_model_response(compare_results2, assistant_id, thread_id)
-                print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! COMPARISON 2 DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Why none of the solutions worked? - DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 iteration_data["iterations"][-1].update({
-                    "comparison_results2": comparison_results2
+                    "why_none_of_the_solutions_worked": comparison_results2
                 })
                 compare_results3 = """
                 Are we in a repetative loop based on the user "Prompt" and the "History of iterations"? IMPORTANT INSTRUCTIONS: You must respond with one word: "yes" or "no".
                 """
                 comparison_results3 = short_model_response(compare_results3, assistant_id, thread_id)
-                print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! COMPARISON 3 DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Are we in a repetative loop? - DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 iteration_data["iterations"][-1].update({
-                    "comparison_results3": comparison_results3
+                    "is_repetative_loop": comparison_results3
                 })
                 if "yes" in comparison_results3.lower():
                     return "repetative_loop", iteration_data
@@ -105,9 +137,13 @@ def auto_debugger(prompt):
 
 if __name__ == "__main__":
     prompt = sys.argv[1] if len(sys.argv) > 1 else ""
-    result, iteration_data = auto_debugger(prompt)
-    print({k: str(v)[:10] for k, v in iteration_data.items()})
-    print(result)
+    asyncio.run(send_iteration_data(prompt))
+
+# if __name__ == "__main__":
+#     prompt = sys.argv[1] if len(sys.argv) > 1 else ""
+#     result, iteration_data = auto_debugger(prompt)
+#     print({k: str(v)[:10] for k, v in iteration_data.items()})
+#     print(result)
 
 # prompt = """
 # HI THERE

@@ -149,10 +149,15 @@ export default function Chat({
 										message.type === "user" ? "bg-blue-500" : "bg-gray-900"
 									} p-1 text-white`}
 								>
-									<pre className="whitespace-pre-wrap">{message.text}</pre>
-									{message.type === "assistant" && message.context && (
-										<ShowAutoDebugging context={message.context} />
+									<pre className="whitespace-pre-wrap">{message.text ?? ""}</pre>
+									{message.type === "assistant" && message.iteration_data && (
+										<pre className="whitespace-pre-wrap">
+											{JSON.stringify(JSON.parse(message.iteration_data).first_model_response, null, 2)}
+										</pre>
 									)}
+									{/* {message.type === "assistant" && message.context && (
+										<ShowAutoDebugging context={message.context} />
+									)} */}
 								</div>
 							</div>
 						</div>

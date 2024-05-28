@@ -107,6 +107,8 @@ def prepare_script_execution(sandbox, model_response: str):
     terminal_output_match = re.search(r'```plaintext(.*?)```', model_response, re.DOTALL)
     terminal_output = terminal_output_match.group(1).strip() if terminal_output_match else ""
 
+    model_response_without_code = re.sub(r'```(bash|python|plaintext).*?```', '', model_response, flags=re.DOTALL).strip()
+
     execution_result = ""
 
     if script:
@@ -114,9 +116,10 @@ def prepare_script_execution(sandbox, model_response: str):
         print("SHELL=", shell_commands)
         print("SCRIPT=", script)
         execution_result = execute_code(sandbox, shell_commands, script)
-        return execution_result
+        return execution_result, model_response_without_code
     else:
         print("Python blocks not found in the response.")
+        return None, model_response_without_code
 
 if __name__ == "__main__":
     # Example usage
