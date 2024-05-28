@@ -23,7 +23,8 @@ async def auto_debugger(prompt, websocket):
         "thread_id": "",
         "first_model_response": "",
         "model_response_without_code": "",
-        "first_execution_result_filtered": "",
+        "execution_result_unfiltered": "",
+        "execution_result_filtered": "",
         "iterations": []
     }
 
@@ -38,14 +39,21 @@ async def auto_debugger(prompt, websocket):
 
     if "```python" in model_response:
         sandbox = initialize_sandbox()
-        execution_result_filtered, model_response_without_code = json.dumps(prepare_script_execution(sandbox, model_response)) if 'execution_result_filtered' in locals() else None
+        # execution_result_filtered, model_response_without_code = json.dumps(prepare_script_execution(sandbox, model_response)) if 'execution_result_filtered' in locals() else None
+        # for interim_result in prepare_script_execution(sandbox, model_response):
+        #    # Process interim results
+        #    print("Received interim result:", interim_result)
+        async for interim_result in prepare_script_execution(sandbox, model_response):
+            iteration_data["execution_result_unfiltered"] = interim_result
+            await websocket.send(json.dumps({"iteration_data": iteration_data}))
 
     iteration_data = {
         "assistant_id": assistant_id,
         "thread_id": thread_id,
         "first_model_response": model_response,
         "model_response_without_code": model_response_without_code,
-        "first_execution_result_filtered": execution_result_filtered if 'execution_result_filtered' in locals() else None,
+        "execution_result_unfiltered": interim_result if 'execution_result_unfiltered' in locals() else None,
+        "execution_result_filtered": execution_result_filtered if 'execution_result_filtered' in locals() else None,
         "iterations": []
     }
 
@@ -139,15 +147,7 @@ if __name__ == "__main__":
     prompt = sys.argv[1] if len(sys.argv) > 1 else ""
     asyncio.run(send_iteration_data(prompt))
 
-# if __name__ == "__main__":
-#     prompt = sys.argv[1] if len(sys.argv) > 1 else ""
-#     result, iteration_data = auto_debugger(prompt)
-#     print({k: str(v)[:10] for k, v in iteration_data.items()})
-#     print(result)
-
 # prompt = """
 # HI THERE
 # """
-# result, iteration_data = auto_debugger(prompt)
-# print({k: str(v)[:10] for k, v in iteration_data.items()})
-# print(result)
+# prompt = "Write a Python script that uses AWS S3 to upload, download, and list objects in a specified bucket. The script should handle authentication and error handling."

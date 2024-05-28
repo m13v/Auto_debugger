@@ -39,6 +39,8 @@ def execute_code(sandbox, installation, script):
         on_stderr=lambda output: results["installation"]["on_stderr"].append(handle_stderr(output))
     )
 
+    # yield json.dumps(results, indent=4)
+
     # Check for installation errors
     if installation_execution.error:
         results["installation"]["result"] = {
@@ -54,7 +56,8 @@ def execute_code(sandbox, installation, script):
             on_stdout=lambda output: results["execution"]["on_stdout"].append(handle_stdout(output)),
             on_stderr=lambda output: results["execution"]["on_stderr"].append(handle_stderr(output))
         )
-        # print("SCRIPT_EXECUTION=", script_execution)
+
+        # yield json.dumps(results, indent=4)
         # Check for script errors
         if script_execution.error:
             results["execution"]["result"] = {
@@ -112,14 +115,24 @@ def prepare_script_execution(sandbox, model_response: str):
     execution_result = ""
 
     if script:
-        # Call execute_code and add the results to the JSON
-        print("SHELL=", shell_commands)
-        print("SCRIPT=", script)
-        execution_result = execute_code(sandbox, shell_commands, script)
-        return execution_result, model_response_without_code
+        # Call execute_code and stream the results
+        for interim_result in execute_code(sandbox, shell_commands, script):
+            yield interim_result
     else:
         print("Python blocks not found in the response.")
-        return None, model_response_without_code
+        yield None
+    # if script:
+    #     # Call execute_code and add the results to the JSON
+    #     print("SHELL=", shell_commands)
+    #     print("SCRIPT=", script)
+    #     execution_result = execute_code(sandbox, shell_commands, script)
+    #     # for interim_result in execute_code(sandbox, shell_commands, script):
+    #     #     print("INTERIM_RESULT=", interim_result)
+    #     #     yield interim_result
+    #     return execution_result, model_response_without_code
+    # else:
+    #     print("Python blocks not found in the response.")
+    #     return None, model_response_without_code
 
 if __name__ == "__main__":
     # Example usage
