@@ -7,6 +7,7 @@ import asyncio
 import websockets
 import json
 import sys
+import re
 
 async def send_iteration_data(prompt):
     uri = "ws://localhost:8765"
@@ -29,30 +30,34 @@ async def auto_debugger(prompt, websocket):
     }
 
     async for interim_result in run_code_interpreter(prompt):
-        iteration_data["first_model_response"] += interim_result
+        iteration_data["first_model_response"] += str(interim_result)
         await websocket.send(json.dumps({"iteration_data": iteration_data}))
 
     # Collect the final result after the streaming is done
     final_result = await run_code_interpreter(prompt).__anext__()
-    assistant_id, thread_id, model_response = final_result
-    model_response_without_code = model_response
+    if len(final_result) == 3:
+        assistant_id, thread_id, model_response = final_result
+    else:
+        assistant_id, thread_id = final_result[0], final_result[1]
+        model_response = ""
+        
+    model_response_without_code = re.sub(r'```(bash|python|plaintext).*?```', '', model_response, flags=re.DOTALL).strip()
 
-    if "```python" in model_response:
+    if "```python" in iteration_data["first_model_response"]: 
         sandbox = initialize_sandbox()
+        print("Entering PREPARE_SCRIPT_EXECUTION")
         # execution_result_filtered, model_response_without_code = json.dumps(prepare_script_execution(sandbox, model_response)) if 'execution_result_filtered' in locals() else None
         # for interim_result in prepare_script_execution(sandbox, model_response):
         #    # Process interim results
         #    print("Received interim result:", interim_result)
-        async for interim_result in prepare_script_execution(sandbox, model_response):
-            iteration_data["execution_result_unfiltered"] = interim_result
+        async for interim_result2 in prepare_script_execution(sandbox, model_response):
+            iteration_data["execution_result_unfiltered"] += str(interim_result2)
             await websocket.send(json.dumps({"iteration_data": iteration_data}))
 
     iteration_data = {
         "assistant_id": assistant_id,
         "thread_id": thread_id,
-        "first_model_response": model_response,
         "model_response_without_code": model_response_without_code,
-        "execution_result_unfiltered": interim_result if 'execution_result_unfiltered' in locals() else None,
         "execution_result_filtered": execution_result_filtered if 'execution_result_filtered' in locals() else None,
         "iterations": []
     }
@@ -141,7 +146,7 @@ async def auto_debugger(prompt, websocket):
                 "execution_result_filtered": execution_result_filtered
             })
     print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ITERATION LOOP PASSED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    return "autodebuggin finished", iteration_data
+    return "autodebugging finished", iteration_data
 
 if __name__ == "__main__":
     prompt = sys.argv[1] if len(sys.argv) > 1 else ""
@@ -151,3 +156,4 @@ if __name__ == "__main__":
 # HI THERE
 # """
 # prompt = "Write a Python script that uses AWS S3 to upload, download, and list objects in a specified bucket. The script should handle authentication and error handling."
+

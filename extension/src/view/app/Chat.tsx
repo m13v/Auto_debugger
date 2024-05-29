@@ -5,6 +5,8 @@ import { javascript } from "@codemirror/lang-javascript";
 import { monokaiDimmed } from "@uiw/codemirror-theme-monokai-dimmed";
 import { EditorView } from "@codemirror/view";
 import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 // import { llamaImage } from './llama.jpg';
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
@@ -149,11 +151,34 @@ export default function Chat({
 										message.type === "user" ? "bg-blue-500" : "bg-gray-900"
 									} p-1 text-white`}
 								>
-									<pre className="whitespace-pre-wrap">{message.text ?? ""}</pre>
+									{message.type === "user" && (
+										<pre className="whitespace-pre-wrap">{message.text || ""}</pre>
+									)}
 									{message.type === "assistant" && message.iteration_data && (
-										<pre className="whitespace-pre-wrap">
-											{JSON.stringify(JSON.parse(message.iteration_data).first_model_response, null, 2)}
-										</pre>
+										<ReactMarkdown
+											className="whitespace-pre-wrap"
+											components={{
+												code({ node, inline, className, children, ...props }) {
+													const match = /language-(\w+)/.exec(className || '');
+													return !inline && match ? (
+														<SyntaxHighlighter
+															style={dark}
+															language={match[1]}
+															PreTag="div"
+															{...props}
+														>
+															{String(children).replace(/\n$/, '')}
+														</SyntaxHighlighter>
+													) : (
+														<code className={className} {...props}>
+															{children}
+														</code>
+													);
+												}
+											}}
+										>
+											{JSON.parse(message.iteration_data)?.first_model_response || ""}
+										</ReactMarkdown>
 									)}
 									{/* {message.type === "assistant" && message.context && (
 										<ShowAutoDebugging context={message.context} />

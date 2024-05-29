@@ -75,7 +75,7 @@ export class CodeAgent {
 	
 				const prompt = message.text;
 				const promptMessage = prompt;
-				const responseMessage = "Steam:";
+				const responseMessage = "";
 
 				this.sendMessage({
 				  command: "message",

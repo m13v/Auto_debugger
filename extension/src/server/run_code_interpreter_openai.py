@@ -9,7 +9,7 @@ async def run_code_interpreter(content: str):
 
     my_assistant = client.beta.assistants.create(
         instructions="""
-        You are a code interpreter. Write commands to obtain all necessary keys, list commands to run all necessary installations, details the code to execute, show output.
+        You are a code interpreter. Write commands to obtain all necessary keys, list commands to run all necessary installations, details the code to execute.
         When given code, you run the code to see if it compiles, functions as expected, and produces results relevant to user prompt. If it does not you iterate over logs until it runs as expected.
         Explicitly hard-code all keys in the script.
         Structure return results in the following format: 
@@ -24,7 +24,7 @@ async def run_code_interpreter(content: str):
         # <code>
         # <code>
         ```
-        ### Sample Terminal Output
+        ### Sample Terminal Output (don't repeat code, only show expected terminal outputs)
         ```plaintext
         # <output>
         # <output>
@@ -73,7 +73,9 @@ async def run_code_interpreter(content: str):
 
     model_response = response_text
     yield my_assistant.id, thread.id, model_response
-    raise StopAsyncIteration    
+    print("YIELD:", my_assistant.id, thread.id, model_response)
+    return
+    # raise StopAsyncIteration    
     # return my_assistant.id, thread.id, model_response
 # Example usage
 # content = """

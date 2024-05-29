@@ -125,7 +125,7 @@ def prepare_script_execution(sandbox, model_response: str):
     #     # Call execute_code and add the results to the JSON
     #     print("SHELL=", shell_commands)
     #     print("SCRIPT=", script)
-    #     execution_result = execute_code(sandbox, shell_commands, script)
+    #     # execution_result = execute_code(sandbox, shell_commands, script)
     #     # for interim_result in execute_code(sandbox, shell_commands, script):
     #     #     print("INTERIM_RESULT=", interim_result)
     #     #     yield interim_result
