@@ -8,17 +8,41 @@ import websockets
 import json
 import sys
 import re
+import asyncio
+import time
+import logging
+import os
+
+# async def follow():
+#     print('follow() called')
+#     with open('app.log', 'r') as file:
+#         file.seek(0, 2)  # Move the cursor to the end of the file
+#         while True:
+#             line = file.readline()
+#             print("line: " + line)
+#             if not line:
+#                 await asyncio.sleep(0.1)  # Sleep briefly
+#                 continue
+# WebSocket server handler
+# async def websocket_handler(websocket, path):
+#     async for message in websocket:
+#         data = json.loads(message)
+#         print(f"Received message websocket2: {data}")
+#         # Handle the received message as needed
+        
+# async def receive_messages(uri, iteration_data, websocket):
+#     async with websockets.connect(uri) as websocket2:
+#         async for message in websocket2:
+#             new_data = json.loads(message)
+#             print(f"Received message from websocket2: {new_data}")
+#             iteration_data["execution_result_unfiltered"] += str(new_data)
+#             await websocket.send(json.dumps({"iteration_data": iteration_data}))
 
 async def send_iteration_data(prompt):
-    uri = "ws://localhost:8765"
-    async with websockets.connect(uri) as websocket:
-        result, iteration_data = await auto_debugger(prompt, websocket)
-        await websocket.send(json.dumps({"status": result, "iteration_data": iteration_data}))
 
-async def auto_debugger(prompt, websocket):
-# def auto_debugger(prompt):
-    total_iterations = 10
-
+    # uri2 = "ws://localhost:8766"
+    # async with websockets.connect(uri2) as websocket2:
+    #     # Start the message receiver coroutine as a separate task
     iteration_data = {
         "assistant_id": "",
         "thread_id": "",
@@ -28,6 +52,17 @@ async def auto_debugger(prompt, websocket):
         "execution_result_filtered": "",
         "iterations": []
     }
+    # asyncio.create_task(receive_messages(uri2, iteration_data, websocket2))
+
+    uri = "ws://localhost:8765"
+    async with websockets.connect(uri) as websocket:
+        result, iteration_data = await auto_debugger(prompt, websocket, iteration_data)
+        await websocket.send(json.dumps({"status": result, "iteration_data": iteration_data}))
+
+async def auto_debugger(prompt, websocket, iteration_data):
+# def auto_debugger(prompt):
+    total_iterations = 10
+
 
     async for interim_result in run_code_interpreter(prompt):
         iteration_data["first_model_response"] += str(interim_result)
@@ -39,20 +74,18 @@ async def auto_debugger(prompt, websocket):
         assistant_id, thread_id, model_response = final_result
     else:
         assistant_id, thread_id = final_result[0], final_result[1]
-        model_response = ""
+        model_response = iteration_data["first_model_response"]
         
     model_response_without_code = re.sub(r'```(bash|python|plaintext).*?```', '', model_response, flags=re.DOTALL).strip()
-
+    
     if "```python" in iteration_data["first_model_response"]: 
         sandbox = initialize_sandbox()
         print("Entering PREPARE_SCRIPT_EXECUTION")
         # execution_result_filtered, model_response_without_code = json.dumps(prepare_script_execution(sandbox, model_response)) if 'execution_result_filtered' in locals() else None
-        # for interim_result in prepare_script_execution(sandbox, model_response):
-        #    # Process interim results
-        #    print("Received interim result:", interim_result)
-        async for interim_result2 in prepare_script_execution(sandbox, model_response):
-            iteration_data["execution_result_unfiltered"] += str(interim_result2)
-            await websocket.send(json.dumps({"iteration_data": iteration_data}))
+        async for interim_result2 in prepare_script_execution(sandbox, model_response).__aiter__():
+                print("interim_result2=", interim_result2)
+                iteration_data["execution_result_filtered"] += str(interim_result2)
+                await websocket.send(json.dumps({"iteration_data": iteration_data}))
 
     iteration_data = {
         "assistant_id": assistant_id,
@@ -148,9 +181,18 @@ async def auto_debugger(prompt, websocket):
     print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ITERATION LOOP PASSED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     return "autodebugging finished", iteration_data
 
+async def main(prompt):
+    # Start the WebSocket server
+    # server = await websockets.serve(websocket_handler, "localhost", 8766)
+    # print("WebSocket2 server started on ws://localhost:8766")
+    # asyncio.create_task(follow())
+
+    # Run the send_iteration_data coroutine
+    await send_iteration_data(prompt)
+
 if __name__ == "__main__":
     prompt = sys.argv[1] if len(sys.argv) > 1 else ""
-    asyncio.run(send_iteration_data(prompt))
+    asyncio.run(main(prompt))
 
 # prompt = """
 # HI THERE

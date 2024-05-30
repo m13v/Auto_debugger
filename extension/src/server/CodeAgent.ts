@@ -85,7 +85,7 @@ export class CodeAgent {
 				const wss = new WebSocket.Server({ port: 8765 });
 
 				wss.on('connection', (ws) => {
-					console.log('WebSocket connection established');
+					console.log('WebSocket (8765) connection established');
 				
 					ws.on('message', (message) => {
 						const data = JSON.parse(message.toString());
@@ -98,7 +98,7 @@ export class CodeAgent {
 					});
 				
 					ws.on('close', () => {
-						console.log('WebSocket connection closed');
+						console.log('WebSocket (8765) connection closed');
 					});
 				});
 				

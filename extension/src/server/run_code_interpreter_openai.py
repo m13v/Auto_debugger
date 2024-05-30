@@ -73,7 +73,7 @@ async def run_code_interpreter(content: str):
 
     model_response = response_text
     yield my_assistant.id, thread.id, model_response
-    print("YIELD:", my_assistant.id, thread.id, model_response)
+    # print("YIELD:", my_assistant.id, thread.id, model_response)
     return
     # raise StopAsyncIteration    
     # return my_assistant.id, thread.id, model_response

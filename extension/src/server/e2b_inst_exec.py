@@ -4,6 +4,17 @@ from dotenv import load_dotenv
 import os
 import json
 import re
+import asyncio
+import websockets
+
+# Global variable to hold the WebSocket connection
+# websocket_connection = None
+
+# async def initialize_websocket():
+#     global websocket_connection
+#     uri = "ws://localhost:8766"
+#     websocket_connection = await websockets.connect(uri)
+#     print("WebSocket (8766) connection established")
 
 # Load environment variables from .env file
 load_dotenv()
@@ -12,21 +23,37 @@ load_dotenv()
 api_key = os.getenv("E2B_API_KEY")
 
 # Set up logging
+# logging.basicConfig(level=logging.INFO, filename='app.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def handle_stdout(output):
     logger.info(output.line)
+    # global websocket_connection
+    # message = output.line
+    # if websocket_connection:
+    #     websocket_connection.send(message)
+    #     print(f"Sent message: {message}")
+    # else:
+    #     print("WebSocket (8766) connection not established")
     return output.line
 
 def handle_stderr(output):
     logger.error(output.line)
+    # global websocket_connection
+    # message = output.line
+    # if websocket_connection:
+    #     websocket_connection.send(message)
+    #     print(f"Sent message: {message}")
+    # else:
+    #     print("WebSocket (8766) connection not established")
     return output.line
 
 def initialize_sandbox():
     return CodeInterpreter(api_key=api_key)
 
-def execute_code(sandbox, installation, script):
+async def execute_code(sandbox, installation, script):
+# def execute_code(sandbox, installation, script):
     results = {
         "installation": {"on_stdout": [], "on_stderr": [], "result": None},
         "execution": {"on_stdout": [], "on_stderr": [], "result": None}
@@ -38,8 +65,6 @@ def execute_code(sandbox, installation, script):
         on_stdout=lambda output: results["installation"]["on_stdout"].append(handle_stdout(output)),
         on_stderr=lambda output: results["installation"]["on_stderr"].append(handle_stderr(output))
     )
-
-    # yield json.dumps(results, indent=4)
 
     # Check for installation errors
     if installation_execution.error:
@@ -89,11 +114,16 @@ def execute_code(sandbox, installation, script):
         execution_result_filtered = results.get("execution", {}).get("result", {})
     else:
         execution_result_filtered = results.get("installation", {})
-    print("EXECUTION_RESULT_FILTERED=",execution_result_filtered)
+    # print("EXECUTION_RESULT_FILTERED=",execution_result_filtered)
+    yield json.dumps(execution_result_filtered, indent=4)
+    return
+    # return json.dumps(execution_result_filtered, indent=4)
 
-    return json.dumps(execution_result_filtered, indent=4)
+async def prepare_script_execution(sandbox, model_response: str):
+# def prepare_script_execution(sandbox, model_response: str):
+    # Run the WebSocket initialization
+    # await initialize_websocket()
 
-def prepare_script_execution(sandbox, model_response: str):
     shell_commands_match = re.search(r'```bash(.*?)```', model_response, re.DOTALL)
     if shell_commands_match:
         shell_commands = shell_commands_match.group(1).strip()
@@ -102,7 +132,9 @@ def prepare_script_execution(sandbox, model_response: str):
         shell_commands = ""
 
     # Extract script
+    script = ""
     script_match = re.search(r'```python(.*?)```', model_response, re.DOTALL)
+    print("script_match=", script_match)
     if script_match:
         script = script_match.group(1).strip()
 
@@ -116,16 +148,16 @@ def prepare_script_execution(sandbox, model_response: str):
 
     if script:
         # Call execute_code and stream the results
-        for interim_result in execute_code(sandbox, shell_commands, script):
+        async for interim_result in execute_code(sandbox, shell_commands, script):
             yield interim_result
     else:
         print("Python blocks not found in the response.")
         yield None
     # if script:
     #     # Call execute_code and add the results to the JSON
-    #     print("SHELL=", shell_commands)
-    #     print("SCRIPT=", script)
-    #     # execution_result = execute_code(sandbox, shell_commands, script)
+    #     # print("SHELL=", shell_commands)
+    #     # print("SCRIPT=", script)
+    #     execution_result = execute_code(sandbox, shell_commands, script)
     #     # for interim_result in execute_code(sandbox, shell_commands, script):
     #     #     print("INTERIM_RESULT=", interim_result)
     #     #     yield interim_result
@@ -134,74 +166,74 @@ def prepare_script_execution(sandbox, model_response: str):
     #     print("Python blocks not found in the response.")
     #     return None, model_response_without_code
 
-if __name__ == "__main__":
-    # Example usage
-    installation = """
-    # Install boto3 package
-    %pip install boto3
-    """
+# if __name__ == "__main__":
+#     # Example usage
+#     installation = """
+#     # Install boto3 package
+#     %pip install boto3
+#     """
 
-    script = """
-    import boto3
-    from botocore.exceptions import NoCredentialsError, PartialCredentialsError, ClientError
+#     script = """
+#     import boto3
+#     from botocore.exceptions import NoCredentialsError, PartialCredentialsError, ClientError
 
-    # AWS Credentials – hardcode here for demonstration purposes only
-    # It's recommended to use IAM roles or environment variables for security.
-    AWS_ACCESS_KEY = 'your-access-key'
-    AWS_SECRET_KEY = 'your-secret-key'
-    BUCKET_NAME = 'your-bucket-name'
+#     # AWS Credentials – hardcode here for demonstration purposes only
+#     # It's recommended to use IAM roles or environment variables for security.
+#     AWS_ACCESS_KEY = 'your-access-key'
+#     AWS_SECRET_KEY = 'your-secret-key'
+#     BUCKET_NAME = 'your-bucket-name'
 
-    # Initialize the S3 client
-    s3_client = boto3.client('s3', 
-                            aws_access_key_id=AWS_ACCESS_KEY,
-                            aws_secret_access_key=AWS_SECRET_KEY)
+#     # Initialize the S3 client
+#     s3_client = boto3.client('s3', 
+#                             aws_access_key_id=AWS_ACCESS_KEY,
+#                             aws_secret_access_key=AWS_SECRET_KEY)
 
-    def upload_file(file_name, bucket, object_name=None):
-        \"\"\"Upload a file to an S3 bucket\"\"\"
-        try:
-            if object_name is None:
-                object_name = file_name
-            s3_client.upload_file(file_name, bucket, object_name)
-            print(f"File {file_name} uploaded to {bucket}/{object_name}")
-        except FileNotFoundError:
-            print(f"The file {file_name} was not found")
-        except NoCredentialsError:
-            print("Credentials not available")
-        except ClientError as e:
-            print(f"ClientError: {e}")
+#     def upload_file(file_name, bucket, object_name=None):
+#         \"\"\"Upload a file to an S3 bucket\"\"\"
+#         try:
+#             if object_name is None:
+#                 object_name = file_name
+#             s3_client.upload_file(file_name, bucket, object_name)
+#             print(f"File {file_name} uploaded to {bucket}/{object_name}")
+#         except FileNotFoundError:
+#             print(f"The file {file_name} was not found")
+#         except NoCredentialsError:
+#             print("Credentials not available")
+#         except ClientError as e:
+#             print(f"ClientError: {e}")
 
-    def download_file(bucket, object_name, file_name):
-        \"\"\"Download a file from an S3 bucket\"\"\"
-        try:
-            s3_client.download_file(bucket, object_name, file_name)
-            print(f"File {file_name} downloaded from {bucket}/{object_name}")
-        except FileNotFoundError:
-            print(f"The file {file_name} was not found")
-        except NoCredentialsError:
-            print("Credentials not available")
-        except ClientError as e:
-            print(f"ClientError: {e}")
+#     def download_file(bucket, object_name, file_name):
+#         \"\"\"Download a file from an S3 bucket\"\"\"
+#         try:
+#             s3_client.download_file(bucket, object_name, file_name)
+#             print(f"File {file_name} downloaded from {bucket}/{object_name}")
+#         except FileNotFoundError:
+#             print(f"The file {file_name} was not found")
+#         except NoCredentialsError:
+#             print("Credentials not available")
+#         except ClientError as e:
+#             print(f"ClientError: {e}")
 
-    def list_files(bucket):
-        \"\"\"List files in an S3 bucket\"\"\"
-        try:
-            response = s3_client.list_objects_v2(Bucket=bucket)
-            if 'Contents' in response:
-                for obj in response['Contents']:
-                    print(obj['Key'])
-            else:
-                print(f"No files found in bucket {bucket}")
-        except NoCredentialsError:
-            print("Credentials not available")
-        except ClientError as e:
-            print(f"ClientError: {e}")
+#     def list_files(bucket):
+#         \"\"\"List files in an S3 bucket\"\"\"
+#         try:
+#             response = s3_client.list_objects_v2(Bucket=bucket)
+#             if 'Contents' in response:
+#                 for obj in response['Contents']:
+#                     print(obj['Key'])
+#             else:
+#                 print(f"No files found in bucket {bucket}")
+#         except NoCredentialsError:
+#             print("Credentials not available")
+#         except ClientError as e:
+#             print(f"ClientError: {e}")
 
-    # Example usage:
-    # upload_file('test.txt', BUCKET_NAME)
-    # download_file(BUCKET_NAME, 'test.txt', 'downloaded_test.txt')
-    # list_files(BUCKET_NAME)
-    """
-    sandbox = initialize_sandbox()  
-    result = execute_code(sandbox, installation, script)
-    print(result)
+#     # Example usage:
+#     # upload_file('test.txt', BUCKET_NAME)
+#     # download_file(BUCKET_NAME, 'test.txt', 'downloaded_test.txt')
+#     # list_files(BUCKET_NAME)
+#     """
+#     sandbox = initialize_sandbox()  
+#     result = execute_code(sandbox, installation, script)
+#     print(result)
 
