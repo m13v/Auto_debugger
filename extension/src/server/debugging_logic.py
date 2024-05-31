@@ -12,6 +12,9 @@ import asyncio
 import time
 import logging
 import os
+import io
+from contextlib import redirect_stdout
+from contextlib import contextmanager
 
 # async def follow():
 #     print('follow() called')
@@ -30,13 +33,36 @@ import os
 #         print(f"Received message websocket2: {data}")
 #         # Handle the received message as needed
         
-# async def receive_messages(uri, iteration_data, websocket):
-#     async with websockets.connect(uri) as websocket2:
-#         async for message in websocket2:
+# async def receive_messages(uri2, iteration_data, websocket2):
+#     print('receive message function')
+#     async with websockets.connect(uri2) as websocket:
+#         print('websocket connected inside receive message function')
+#         async for message in websocket:
 #             new_data = json.loads(message)
 #             print(f"Received message from websocket2: {new_data}")
 #             iteration_data["execution_result_unfiltered"] += str(new_data)
-#             await websocket.send(json.dumps({"iteration_data": iteration_data}))
+            # await websocket.send(json.dumps({"iteration_data": iteration_data}))
+
+
+@contextmanager
+def capture_and_print_stdout():
+    old_stdout = sys.stdout
+    sys.stdout = io.StringIO()
+    try:
+        yield sys.stdout
+    finally:
+        sys.stdout.seek(0)
+        while True:
+            line = sys.stdout.readline()
+            if not line:
+                break
+            print(line, end='')
+        sys.stdout = old_stdout
+
+async def capture_stdout(coroutine):
+    with capture_and_print_stdout() as f:
+        await coroutine
+    return f.getvalue()
 
 async def send_iteration_data(prompt):
 
@@ -52,21 +78,21 @@ async def send_iteration_data(prompt):
         "execution_result_filtered": "",
         "iterations": []
     }
-    # asyncio.create_task(receive_messages(uri2, iteration_data, websocket2))
+        # asyncio.create_task(receive_messages(uri2, iteration_data, websocket2))
 
-    uri = "ws://localhost:8765"
-    async with websockets.connect(uri) as websocket:
-        result, iteration_data = await auto_debugger(prompt, websocket, iteration_data)
-        await websocket.send(json.dumps({"status": result, "iteration_data": iteration_data}))
+    # uri = "ws://localhost:8765"
+    # async with websockets.connect(uri) as websocket:
+    result, iteration_data = await auto_debugger(prompt, iteration_data) #websocket
+    #     await websocket.send(json.dumps({"status": result, "iteration_data": iteration_data}))
 
-async def auto_debugger(prompt, websocket, iteration_data):
+async def auto_debugger(prompt, iteration_data): #websocket
 # def auto_debugger(prompt):
     total_iterations = 10
 
 
     async for interim_result in run_code_interpreter(prompt):
         iteration_data["first_model_response"] += str(interim_result)
-        await websocket.send(json.dumps({"iteration_data": iteration_data}))
+        # await websocket.send(json.dumps({"iteration_data": iteration_data}))
 
     # Collect the final result after the streaming is done
     final_result = await run_code_interpreter(prompt).__anext__()
@@ -81,11 +107,11 @@ async def auto_debugger(prompt, websocket, iteration_data):
     if "```python" in iteration_data["first_model_response"]: 
         sandbox = initialize_sandbox()
         print("Entering PREPARE_SCRIPT_EXECUTION")
-        # execution_result_filtered, model_response_without_code = json.dumps(prepare_script_execution(sandbox, model_response)) if 'execution_result_filtered' in locals() else None
-        async for interim_result2 in prepare_script_execution(sandbox, model_response).__aiter__():
-                print("interim_result2=", interim_result2)
-                iteration_data["execution_result_filtered"] += str(interim_result2)
-                await websocket.send(json.dumps({"iteration_data": iteration_data}))
+        execution_result_filtered, model_response_without_code = json.dumps(prepare_script_execution(sandbox, model_response)) if 'execution_result_filtered' in locals() else None
+        # async for interim_result2 in prepare_script_execution(sandbox, model_response).__aiter__():
+        #         print("interim_result2=", interim_result2)
+        #         iteration_data["execution_result_filtered"] += str(interim_result2)
+        #         # await websocket.send(json.dumps({"iteration_data": iteration_data}))
 
     iteration_data = {
         "assistant_id": assistant_id,
@@ -96,8 +122,7 @@ async def auto_debugger(prompt, websocket, iteration_data):
     }
 
     # await websocket.send(json.dumps({"iteration_data": iteration_data}))
-
-    print("await websocket message sent")
+    # print("await websocket message sent")
 
     print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FIRST EXECUTION DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     if 'execution_result_filtered' in locals() and execution_result_filtered and execution_result_filtered != '""':

@@ -6,6 +6,7 @@ import json
 import re
 import asyncio
 import websockets
+import sys
 
 # Global variable to hold the WebSocket connection
 # websocket_connection = None
@@ -28,7 +29,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def handle_stdout(output):
-    logger.info(output.line)
+    print(output.line, file=sys.stdout)
+    sys.stdout.flush()
+    # logger.info(output.line)
     # global websocket_connection
     # message = output.line
     # if websocket_connection:
@@ -39,7 +42,9 @@ def handle_stdout(output):
     return output.line
 
 def handle_stderr(output):
-    logger.error(output.line)
+    print(output.line, file=sys.stdout)
+    sys.stdout.flush()
+    # logger.error(output.line)
     # global websocket_connection
     # message = output.line
     # if websocket_connection:
@@ -50,10 +55,11 @@ def handle_stderr(output):
     return output.line
 
 def initialize_sandbox():
-    return CodeInterpreter(api_key=api_key)
+    interpreter = CodeInterpreter(api_key=api_key)
+    return interpreter
 
-async def execute_code(sandbox, installation, script):
-# def execute_code(sandbox, installation, script):
+# async def execute_code(sandbox, installation, script):
+def execute_code(sandbox, installation, script):
     results = {
         "installation": {"on_stdout": [], "on_stderr": [], "result": None},
         "execution": {"on_stdout": [], "on_stderr": [], "result": None}
@@ -114,13 +120,13 @@ async def execute_code(sandbox, installation, script):
         execution_result_filtered = results.get("execution", {}).get("result", {})
     else:
         execution_result_filtered = results.get("installation", {})
-    # print("EXECUTION_RESULT_FILTERED=",execution_result_filtered)
-    yield json.dumps(execution_result_filtered, indent=4)
-    return
-    # return json.dumps(execution_result_filtered, indent=4)
+    print("EXECUTION_RESULT_FILTERED=",execution_result_filtered)
+    # yield json.dumps(execution_result_filtered, indent=4)
+    # return
+    return json.dumps(execution_result_filtered, indent=4)
 
-async def prepare_script_execution(sandbox, model_response: str):
-# def prepare_script_execution(sandbox, model_response: str):
+# async def prepare_script_execution(sandbox, model_response: str):
+def prepare_script_execution(sandbox, model_response: str):
     # Run the WebSocket initialization
     # await initialize_websocket()
 
@@ -139,32 +145,33 @@ async def prepare_script_execution(sandbox, model_response: str):
         script = script_match.group(1).strip()
 
     # Extract sample terminal output
-    terminal_output_match = re.search(r'```plaintext(.*?)```', model_response, re.DOTALL)
-    terminal_output = terminal_output_match.group(1).strip() if terminal_output_match else ""
+    # terminal_output_match = re.search(r'```plaintext(.*?)```', model_response, re.DOTALL)
+    # terminal_output = terminal_output_match.group(1).strip() if terminal_output_match else ""
 
     model_response_without_code = re.sub(r'```(bash|python|plaintext).*?```', '', model_response, flags=re.DOTALL).strip()
 
     execution_result = ""
 
-    if script:
-        # Call execute_code and stream the results
-        async for interim_result in execute_code(sandbox, shell_commands, script):
-            yield interim_result
-    else:
-        print("Python blocks not found in the response.")
-        yield None
     # if script:
-    #     # Call execute_code and add the results to the JSON
-    #     # print("SHELL=", shell_commands)
-    #     # print("SCRIPT=", script)
-    #     execution_result = execute_code(sandbox, shell_commands, script)
-    #     # for interim_result in execute_code(sandbox, shell_commands, script):
-    #     #     print("INTERIM_RESULT=", interim_result)
-    #     #     yield interim_result
-    #     return execution_result, model_response_without_code
+    #     # Call execute_code and stream the results
+    #     async for interim_result in execute_code(sandbox, shell_commands, script):
+    #         yield interim_result
     # else:
     #     print("Python blocks not found in the response.")
-    #     return None, model_response_without_code
+    #     yield None
+    if script:
+        # Call execute_code and add the results to the JSON
+        # print("SHELL=", shell_commands)
+        # print("SCRIPT=", script)
+        execution_result = execute_code(sandbox, shell_commands, script)
+        # for interim_result in execute_code(sandbox, shell_commands, script):
+        #     print("INTERIM_RESULT=", interim_result)
+        #     yield interim_result
+        print("execution_result=", execution_result[:20], "model_response=", model_response[:20])
+        return execution_result, model_response_without_code
+    else:
+        print("Python blocks not found in the response.")
+        return None, model_response_without_code
 
 # if __name__ == "__main__":
 #     # Example usage

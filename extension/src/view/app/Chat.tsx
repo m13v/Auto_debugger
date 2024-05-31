@@ -177,7 +177,7 @@ export default function Chat({
 												}
 											}}
 										>
-											{JSON.parse(message.iteration_data)?.first_model_response || ""}
+											{message.iteration_data || ""}
 										</ReactMarkdown>
 									)}
 									{/* {message.type === "assistant" && message.context && (
