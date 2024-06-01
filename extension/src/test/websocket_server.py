@@ -15,8 +15,8 @@ async def handler(websocket, path):
         logging.info(f"Connection closed: {e}")
 
 async def main():
-    async with websockets.serve(handler, "localhost", 8766):
-        logging.info("WebSocket server started on ws://localhost:8766")
+    async with websockets.serve(handler, "localhost", 8765):
+        logging.info("WebSocket server started on ws://localhost:8765")
         await asyncio.Future()  # run forever
 
 if __name__ == "__main__":

@@ -163,15 +163,32 @@ def prepare_script_execution(sandbox, model_response: str):
         # Call execute_code and add the results to the JSON
         # print("SHELL=", shell_commands)
         # print("SCRIPT=", script)
-        execution_result = execute_code(sandbox, shell_commands, script)
+        execute_code(sandbox, shell_commands, script)
+        # execution_result_filtered = execute_code(sandbox, shell_commands, script)
         # for interim_result in execute_code(sandbox, shell_commands, script):
         #     print("INTERIM_RESULT=", interim_result)
         #     yield interim_result
-        print("execution_result=", execution_result[:20], "model_response=", model_response[:20])
-        return execution_result, model_response_without_code
+        # print("execution_result=", execution_result_filtered[:30], "...| model_response=", model_response[:30], "...|")
+        # return execution_result_filtered, model_response_without_code
     else:
         print("Python blocks not found in the response.")
-        return None, model_response_without_code
+        # return None, model_response_without_code
+
+def main():
+    # print("subprocess started")
+    # sandbox = sys.argv[1]  # Assuming the first argument is the sandbox
+    model_response = sys.argv[1]  # Assuming the second argument is the model response
+    sandbox = initialize_sandbox()
+    # Execute the function
+    execution_result_filtered = prepare_script_execution(sandbox, model_response)
+
+    # Print the result so it can be captured by subprocess
+    # print("execution_result_filtered=", json.dumps(execution_result_filtered))
+
+    return execution_result_filtered
+
+if __name__ == "__main__":
+    main()
 
 # if __name__ == "__main__":
 #     # Example usage

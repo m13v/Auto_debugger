@@ -13,6 +13,10 @@ def handle_stdout(output):
     print(output.line, file=sys.stdout)
     sys.stdout.flush()
 
+def handle_stderr(output):
+    print(output.line, file=sys.stderr)
+    sys.stderr.flush()
+
 def initialize_sandbox():
     interpreter = CodeInterpreter(api_key=api_key)
     print("WebSocket URL:", interpreter._rpc.url)
@@ -40,9 +44,12 @@ async def main():
     listener_task = asyncio.create_task(connect_to_websocket(ws_url))
     await asyncio.sleep(2)
     interpreter.notebook.exec_cell(
-        "print('Hello, World!')",
+        """
+        from asyncio import sleep
+        for i in range(5): print('Hello, World!', i); await sleep(1)
+        """,
         on_stdout=handle_stdout,
-        on_stderr=handle_stdout
+        on_stderr=handle_stderr
     )
     await listener_task
 

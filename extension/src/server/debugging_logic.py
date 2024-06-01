@@ -15,6 +15,7 @@ import os
 import io
 from contextlib import redirect_stdout
 from contextlib import contextmanager
+import subprocess
 
 # async def follow():
 #     print('follow() called')
@@ -44,25 +45,25 @@ from contextlib import contextmanager
             # await websocket.send(json.dumps({"iteration_data": iteration_data}))
 
 
-@contextmanager
-def capture_and_print_stdout():
-    old_stdout = sys.stdout
-    sys.stdout = io.StringIO()
-    try:
-        yield sys.stdout
-    finally:
-        sys.stdout.seek(0)
-        while True:
-            line = sys.stdout.readline()
-            if not line:
-                break
-            print(line, end='')
-        sys.stdout = old_stdout
+# @contextmanager
+# def capture_and_print_stdout():
+#     old_stdout = sys.stdout
+#     sys.stdout = io.StringIO()
+#     try:
+#         yield sys.stdout
+#     finally:
+#         sys.stdout.seek(0)
+#         while True:
+#             line = sys.stdout.readline()
+#             if not line:
+#                 break
+#             print("captured line: ",line, end='')
+#         sys.stdout = old_stdout
 
-async def capture_stdout(coroutine):
-    with capture_and_print_stdout() as f:
-        await coroutine
-    return f.getvalue()
+# async def capture_stdout(coroutine):
+#     with capture_and_print_stdout() as f:
+#         await coroutine
+#     return f.getvalue()
 
 async def send_iteration_data(prompt):
 
@@ -80,19 +81,19 @@ async def send_iteration_data(prompt):
     }
         # asyncio.create_task(receive_messages(uri2, iteration_data, websocket2))
 
-    # uri = "ws://localhost:8765"
-    # async with websockets.connect(uri) as websocket:
-    result, iteration_data = await auto_debugger(prompt, iteration_data) #websocket
-    #     await websocket.send(json.dumps({"status": result, "iteration_data": iteration_data}))
+    uri = "ws://localhost:8765"
+    async with websockets.connect(uri) as websocket:
+        result, iteration_data = await auto_debugger(prompt, iteration_data, websocket) #websocket
+        await websocket.send(json.dumps({"status": result, "iteration_data": iteration_data}))
 
-async def auto_debugger(prompt, iteration_data): #websocket
+async def auto_debugger(prompt, iteration_data, websocket): #websocket
 # def auto_debugger(prompt):
     total_iterations = 10
 
 
     async for interim_result in run_code_interpreter(prompt):
         iteration_data["first_model_response"] += str(interim_result)
-        # await websocket.send(json.dumps({"iteration_data": iteration_data}))
+        await websocket.send(json.dumps({"iteration_data": iteration_data}))
 
     # Collect the final result after the streaming is done
     final_result = await run_code_interpreter(prompt).__anext__()
@@ -105,9 +106,34 @@ async def auto_debugger(prompt, iteration_data): #websocket
     model_response_without_code = re.sub(r'```(bash|python|plaintext).*?```', '', model_response, flags=re.DOTALL).strip()
     
     if "```python" in iteration_data["first_model_response"]: 
-        sandbox = initialize_sandbox()
+        # sandbox = initialize_sandbox()
         print("Entering PREPARE_SCRIPT_EXECUTION")
-        execution_result_filtered, model_response_without_code = json.dumps(prepare_script_execution(sandbox, model_response)) if 'execution_result_filtered' in locals() else None
+
+        process = subprocess.Popen(
+            ["python3", "src/server/e2b_inst_exec.py", model_response],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        # Initialize the unfiltered execution result
+        iteration_data["execution_result_unfiltered"] = ""
+
+        # Stream the output line by line
+        while True:
+            line = process.stdout.readline()
+            if not line:
+                break
+            iteration_data["execution_result_unfiltered"] += line   
+            if "EXECUTION_RESULT_FILTERED=" in line:
+                execution_result_filtered = line.split("EXECUTION_RESULT_FILTERED=")[1].strip()
+            await websocket.send(json.dumps({"iteration_data": iteration_data}))
+            print(f"Parent received: {line}", end='')
+
+        # After the loop, you can now close stdout
+        process.stdout.close()
+
+        # execution_result_filtered, model_response_without_code = json.dumps(prepare_script_execution(sandbox, model_response)), model_response_without_code
         # async for interim_result2 in prepare_script_execution(sandbox, model_response).__aiter__():
         #         print("interim_result2=", interim_result2)
         #         iteration_data["execution_result_filtered"] += str(interim_result2)
