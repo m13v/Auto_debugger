@@ -64,9 +64,30 @@ export type UserMessage = {
 export type AssistantMessage = {
 	type: "assistant";
 	text: string;
-	iteration_data?: JSON;
+	iteration_data?: IterationData;
 	context?: AutoDebugContext;
 	meta?: {
 		isCodeGen: isCodeGen;
 	};
 };
+
+export interface Iteration {
+    index?: number;
+    evaluation_result?: string;
+    made_progress?: string;
+    why_none_of_the_solutions_worked?: string;
+    is_repetative_loop?: string;
+    decision_maker?: string;
+    new_iteration_results?: string;
+    execution_result_filtered?: string;
+}
+
+export interface IterationData {
+    assistant_id?: string;
+    thread_id?: string;
+    first_model_response?: string;
+    model_response_without_code?: string;
+    execution_result_unfiltered?: string;
+    execution_result_filtered?: string;
+    iterations?: Iteration[];
+}

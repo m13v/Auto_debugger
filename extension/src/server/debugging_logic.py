@@ -89,19 +89,54 @@ async def send_iteration_data(prompt):
 async def auto_debugger(prompt, iteration_data, websocket): #websocket
 # def auto_debugger(prompt):
     total_iterations = 10
+    assistant_id = None  # Initialize to None or a default value
+    thread_id = None     # Initialize to None or a default value
 
+    process = subprocess.Popen(
+        ["python3", "src/server/run_code_interpreter_openai.py", prompt],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
 
-    async for interim_result in run_code_interpreter(prompt):
-        iteration_data["first_model_response"] += str(interim_result)
-        await websocket.send(json.dumps({"iteration_data": iteration_data}))
-
-    # Collect the final result after the streaming is done
-    final_result = await run_code_interpreter(prompt).__anext__()
-    if len(final_result) == 3:
-        assistant_id, thread_id, model_response = final_result
+    if process.poll() is None:
+        print("Subprocess has started and is running.")
     else:
-        assistant_id, thread_id = final_result[0], final_result[1]
-        model_response = iteration_data["first_model_response"]
+        print("Subprocess may not have started or has already terminated.")
+    # Initialize the unfiltered execution result
+    iteration_data["first_model_response"] = ""
+
+    # Stream the output line by line
+    while True:
+        line = process.stdout.readline()
+        if not line:
+            break
+        if "my_assistant_id:" in line:
+            assistant_id = line.split("my_assistant_id:")[1].strip()
+            # Remove the my_assistant_id part from the line
+            line = line.split("my_assistant_id:")[0]
+        if "thread_id:" in line:
+            thread_id = line.split("thread_id:")[1].strip()
+            # Remove the thread_id part from the line
+            line = line.split("thread_id:")[0]
+        iteration_data["first_model_response"] += line   
+        await websocket.send(json.dumps({"iteration_data": iteration_data}))
+        print(f"Parent received: {line}", end='')
+
+    # After the loop, you can now close stdout
+    process.stdout.close()
+    model_response=iteration_data["first_model_response"]
+    # async for interim_result in run_code_interpreter(prompt):
+    #     iteration_data["first_model_response"] += str(interim_result)
+    #     await websocket.send(json.dumps({"iteration_data": iteration_data}))
+
+    # # Collect the final result after the streaming is done
+    # final_result = await run_code_interpreter(prompt).__anext__()
+    # if len(final_result) == 3:
+    #     assistant_id, thread_id, model_response = final_result
+    # else:
+    #     assistant_id, thread_id = final_result[0], final_result[1]
+    #     model_response = iteration_data["first_model_response"]
         
     model_response_without_code = re.sub(r'```(bash|python|plaintext).*?```', '', model_response, flags=re.DOTALL).strip()
     
@@ -139,15 +174,12 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
         #         iteration_data["execution_result_filtered"] += str(interim_result2)
         #         # await websocket.send(json.dumps({"iteration_data": iteration_data}))
 
-    iteration_data = {
-        "assistant_id": assistant_id,
-        "thread_id": thread_id,
-        "model_response_without_code": model_response_without_code,
-        "execution_result_filtered": execution_result_filtered if 'execution_result_filtered' in locals() else None,
-        "iterations": []
-    }
+    iteration_data["assistant_id"] = assistant_id
+    iteration_data["thread_id"] = thread_id
+    iteration_data["model_response_without_code"] = model_response_without_code
+    iteration_data["execution_result_filtered"] = execution_result_filtered if 'execution_result_filtered' in locals() else None
 
-    # await websocket.send(json.dumps({"iteration_data": iteration_data}))
+    await websocket.send(json.dumps({"iteration_data": iteration_data}))
     # print("await websocket message sent")
 
     print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FIRST EXECUTION DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
@@ -223,7 +255,38 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
             iteration_data["iterations"][-1].update({
                 "new_iteration_results": new_iteration_results
             })
-            execution_result_filtered = json.dumps(prepare_script_execution(sandbox, new_iteration_results))
+            if "```python" in new_iteration_results: 
+                # sandbox = initialize_sandbox()
+                print("Entering PREPARE_SCRIPT_EXECUTION")
+
+                process = subprocess.Popen(
+                    ["python3", "src/server/e2b_inst_exec.py", model_response],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+
+                # Initialize the unfiltered execution result
+                iteration_data["execution_result_unfiltered"] = ""
+
+                # Stream the output line by line
+                while True:
+                    line = process.stdout.readline()
+                    if not line:
+                        break
+                    iteration_data["iterations"][-1].update({
+                        "execution_result_filtered" : iteration_data["iterations"][-1]["execution_result_filtered"] + line
+                    })
+                    # iteration_data["execution_result_unfiltered"] += line   
+                    if "EXECUTION_RESULT_FILTERED=" in line:
+                        execution_result_filtered = line.split("EXECUTION_RESULT_FILTERED=")[1].strip()
+                    await websocket.send(json.dumps({"iteration_data": iteration_data}))
+                    print(f"Parent received: {line}", end='')
+
+                # After the loop, you can now close stdout
+                process.stdout.close()
+                print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NEW EXECUTION DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+
             if not execution_result_filtered or execution_result_filtered == '""':
                 return "execution_stopped", iteration_data
             iteration_data["iterations"][-1].update({

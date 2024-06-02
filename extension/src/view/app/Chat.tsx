@@ -11,6 +11,9 @@ import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import type { AutoDebugContext, Message, UserMessage, isCodeGen } from "./model";
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/monokai.css'; // Import the Monokai theme
+import Terminal from 'terminal-in-react';
 
 type ChatProps = {
 	messages: Message[];
@@ -37,6 +40,18 @@ export default function Chat({
     const [isActive, setIsActive] = useState(true); // State to control the interval
 	const [historyIndex, setHistoryIndex] = useState<number>(-1);
 	const [currentMessageIndex, setCurrentMessageIndex] = useState<number | null>(null);
+
+    const modelResponseStyle = {
+        marginBottom: '20px',
+    };
+
+	const terminalStyle = {
+		backgroundColor: '#333',
+		color: '#fff',
+		padding: '10px',
+		fontFamily: "'Courier New', Courier, monospace",
+		whiteSpace: 'pre-wrap',
+	};
 
 	useEffect(() => {
 		if (inputRef.current) {
@@ -86,6 +101,15 @@ export default function Chat({
 		<div className="flex h-screen w-full flex-col bg-[#1e1e1e]">
 			<div className="flex-1 overflow-auto p-4">
 				{chatMessages.map((message, index) => {
+					// console.log("Message object:", message);
+					// const firstModelResponse = message.iteration_data?.first_model_response ?? "Default response if undefined";
+					// if (firstModelResponse !== "Default response if undefined") {
+					// 	console.log("iteration_data:", message.iteration_data);
+					// 	console.log("first_model_response=", firstModelResponse);
+					// } else {
+					// 	console.log("iteration_data:", message.iteration_data);
+					// 	console.log("first_model_response is undefined", message.iteration_data?.assistant_id, message.iteration_data?.first_model_response);
+					// }						
 					let lastHistoryItem: any;
 					let status: string = 'debugging...';
 					if ("context" in message && message?.context?.history && message.context.history.length > 0) {
@@ -155,30 +179,53 @@ export default function Chat({
 										<pre className="whitespace-pre-wrap">{message.text || ""}</pre>
 									)}
 									{message.type === "assistant" && message.iteration_data && (
-										<ReactMarkdown
-											className="whitespace-pre-wrap"
-											components={{
-												code({ node, inline, className, children, ...props }) {
-													const match = /language-(\w+)/.exec(className || '');
-													return !inline && match ? (
-														<SyntaxHighlighter
-															style={dark}
-															language={match[1]}
-															PreTag="div"
-															{...props}
-														>
-															{String(children).replace(/\n$/, '')}
-														</SyntaxHighlighter>
-													) : (
-														<code className={className} {...props}>
-															{children}
-														</code>
-													);
-												}
-											}}
-										>
-											{message.iteration_data || ""}
-										</ReactMarkdown>
+										<>
+											{/* Render the first model response */}
+											<div style={modelResponseStyle}>
+												{/* <ReactMarkdown 
+													className="whitespace-pre-wrap"
+													components={{
+														code({ node, inline, className, children, ...props }) {
+															const match = /language-(\w+)/.exec(className || '');
+															return !inline && match ? (
+																<SyntaxHighlighter
+																	style={dark}
+																	language={match[1]}
+																	PreTag="div"
+																	{...props}
+																>
+																	{String(children).replace(/\n$/, '')}
+																</SyntaxHighlighter>
+															) : (
+																<code className={className} {...props}>
+																	{children}
+																</code>
+															);
+														}
+													}}
+												> */}
+										        <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
+													{message.iteration_data.first_model_response || ""}
+												</ReactMarkdown>
+											</div>
+
+											{/* Render the execution result unfiltered as terminal output */}
+                                            <div style={terminalStyle}>
+                                                <Terminal
+                                                    color='green'
+                                                    backgroundColor='black'
+                                                    barColor='black'
+                                                    style={{ fontWeight: "bold", fontSize: "1em" }}
+                                                    commands={{
+                                                        'show-log': () => message.iteration_data.execution_result_unfiltered || "",
+                                                    }}
+                                                    description={{
+                                                        'show-log': 'Shows the execution log',
+                                                    }}
+                                                    msg={message.iteration_data.execution_result_unfiltered || ""}
+                                                />
+                                            </div>
+										</>
 									)}
 									{/* {message.type === "assistant" && message.context && (
 										<ShowAutoDebugging context={message.context} />
@@ -222,70 +269,70 @@ export default function Chat({
 	);
 }
 
-function ShowAutoDebugging({
-	context,
-}: { context: AutoDebugContext }): React.ReactNode {
-	const { history } = context;
-	const [historyIndex, setHistoryIndex] = useState<number>(-1);
-	const lastHistoryItem = history[historyIndex < 0 ? history.length - 1 : historyIndex];
-	const newCode = lastHistoryItem.code;
-	const [isExpanded, setIsExpanded] = useState(false);
+// function ShowAutoDebugging({
+// 	context,
+// }: { context: AutoDebugContext }): React.ReactNode {
+// 	const { history } = context;
+// 	const [historyIndex, setHistoryIndex] = useState<number>(-1);
+// 	const lastHistoryItem = history[historyIndex < 0 ? history.length - 1 : historyIndex];
+// 	const newCode = lastHistoryItem.code;
+// 	const [isExpanded, setIsExpanded] = useState(false);
 
-	return (
-		<div>
-			<CodeMirror
-				value={newCode}
-				height="auto"
-				extensions={[
-					javascript({ jsx: true }),
-					EditorView.lineWrapping,
-					customFontSizeTheme,
-				]}
-				theme={monokaiDimmed}
-			/>
+// 	return (
+// 		<div>
+// 			<CodeMirror
+// 				value={newCode}
+// 				height="auto"
+// 				extensions={[
+// 					javascript({ jsx: true }),
+// 					EditorView.lineWrapping,
+// 					customFontSizeTheme,
+// 				]}
+// 				theme={monokaiDimmed}
+// 			/>
 
-			{lastHistoryItem.result && (
-				<>
-					<div> <strong>TERMINAL:</strong> </div>
-					<div
-						className="terminal-output"
-						style={{ backgroundColor: "black", color: "white", padding: "10px", fontSize: "12px", fontWeight: "normal" }}
-					>
-						<div>
-							<pre
-								className="whitespace-pre-wrap"
-								style={{ fontWeight: "normal" }}
-							>
-								{lastHistoryItem.result.stdout}
-							</pre>
-						</div>
-						{lastHistoryItem.result.stderr && (
-							<div>
-								<strong>Errors:</strong>
-								<pre
-									className="whitespace-pre-wrap"
-									style={{ fontWeight: "normal" }}
-								>
-									{lastHistoryItem.result.stderr}
-								</pre>
-							</div>
-						)}
-					</div>
-				</>
-			)}
+// 			{lastHistoryItem.result && (
+// 				<>
+// 					<div> <strong>TERMINAL:</strong> </div>
+// 					<div
+// 						className="terminal-output"
+// 						style={{ backgroundColor: "black", color: "white", padding: "10px", fontSize: "12px", fontWeight: "normal" }}
+// 					>
+// 						<div>
+// 							<pre
+// 								className="whitespace-pre-wrap"
+// 								style={{ fontWeight: "normal" }}
+// 							>
+// 								{lastHistoryItem.result.stdout}
+// 							</pre>
+// 						</div>
+// 						{lastHistoryItem.result.stderr && (
+// 							<div>
+// 								<strong>Errors:</strong>
+// 								<pre
+// 									className="whitespace-pre-wrap"
+// 									style={{ fontWeight: "normal" }}
+// 								>
+// 									{lastHistoryItem.result.stderr}
+// 								</pre>
+// 							</div>
+// 						)}
+// 					</div>
+// 				</>
+// 			)}
 
-			<ReactMarkdown
-				children={isExpanded ? lastHistoryItem.analysis : `Analysis...`}
-				components={{
-					p: ({ node, ...props }) => <p style={{ fontSize: '0.8em' }} {...props} />,
-				}}
-			/>
-			<button onClick={() => setIsExpanded(!isExpanded)}>
-				{isExpanded ? 'Read less' : 'Read more'}
-			</button>
-		</div>
-	);
-}
+// 			<ReactMarkdown
+// 				children={isExpanded ? lastHistoryItem.analysis : `Analysis...`}
+// 				components={{
+// 					p: ({ node, ...props }) => <p style={{ fontSize: '0.8em' }} {...props} />,
+// 				}}
+// 			/>
+// 			<button onClick={() => setIsExpanded(!isExpanded)}>
+// 				{isExpanded ? 'Read less' : 'Read more'}
+// 			</button>
+// 		</div>
+// 	);
+// }
 
 function SendIcon(props: any) {
 	return (

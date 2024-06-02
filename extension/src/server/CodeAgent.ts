@@ -92,7 +92,7 @@ export class CodeAgent {
 						console.log('Websocket received:', data);
 						this.sendMessage({
 							command: "stream-message",
-							iteration_data: JSON.stringify(data.iteration_data),
+							iteration_data: data.iteration_data,
 						});
 						// Handle the received message
 					});
