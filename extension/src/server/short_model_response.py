@@ -1,6 +1,7 @@
 from openai_client import openai_client_instance
+import json
 
-def short_model_response(new_instructions: str, assistant_id: str, thread_id: str):
+async def short_model_response(new_instructions: str, assistant_id: str, thread_id: str, websocket, iteration_data: dict, parameter: int):
     client = openai_client_instance
 
     message = client.beta.threads.messages.create(
@@ -23,14 +24,20 @@ def short_model_response(new_instructions: str, assistant_id: str, thread_id: st
                     if delta.type == 'text':
                         response_text += delta.text.value
                         print(delta.text.value, end="", flush=True)
+                        # Stream to iteration_data and websocket
+                        iteration_data["iterations"][-1][parameter] = response_text
+                        await websocket.send(json.dumps({"iteration_data": iteration_data}))
             elif event.event == 'thread.message.created':
                 if event.data.content:
                     for content in event.data.content:
                         if content.type == 'text':
                             response_text += content.text.value
                             print(content.text.value, end="", flush=True)
+                            # Stream to iteration_data and websocket
+                            iteration_data["iterations"][-1][parameter] = response_text
+                            await websocket.send(json.dumps({"iteration_data": iteration_data}))
             elif event.event == 'thread.run.completed':
                 break
     print("\nResponse stream completed.")
 
-    return response_text
+    return iteration_data

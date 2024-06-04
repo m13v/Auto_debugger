@@ -1,57 +1,79 @@
 import React, { useCallback, useState, useEffect, useRef } from "react";
 import { AvatarImage, AvatarFallback, Avatar } from "./components/ui/avatar";
-import CodeMirror from "@uiw/react-codemirror";
-import { javascript } from "@codemirror/lang-javascript";
-import { monokaiDimmed } from "@uiw/codemirror-theme-monokai-dimmed";
-import { EditorView } from "@codemirror/view";
+// import CodeMirror from "@uiw/react-codemirror";
+// import { javascript } from "@codemirror/lang-javascript";
+// import { monokaiDimmed } from "@uiw/codemirror-theme-monokai-dimmed";
+// import { EditorView } from "@codemirror/view";
 import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+// import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+// import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 // import { llamaImage } from './llama.jpg';
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import type { AutoDebugContext, Message, UserMessage, isCodeGen } from "./model";
 import rehypeHighlight from 'rehype-highlight';
+// import rehypeStringify from 'rehype-stringify';
+// import './custom-highlight.css'; // Adjust the path to your custom CSS file
 import 'highlight.js/styles/monokai.css'; // Import the Monokai theme
-import Terminal from 'terminal-in-react';
+// import Terminal from 'terminal-in-react';
+// import Terminal, { ColorMode, TerminalOutput } from 'react-terminal-ui';
+// import { TerminalContextProvider } from "react-terminal";
+// import { css } from '@emotion/react';
 
 type ChatProps = {
 	messages: Message[];
 	onSendMessage: (message: string) => void;
 };
 
-const customFontSizeTheme = EditorView.theme({
-	"&": {
-		fontSize: "12px", // Set your desired font size here
-	},
-	".cm-content": {
-		fontFamily: "monospace", // Optional: Set the font family if needed
-	},
-});
+// const customFontSizeTheme = EditorView.theme({
+// 	"&": {
+// 		fontSize: "12px", // Set your desired font size here
+// 	},
+// 	".cm-content": {
+// 		fontFamily: "monospace", // Optional: Set the font family if needed
+// 	},
+// });
 
 export default function Chat({
 	messages: chatMessages,
 	onSendMessage,
 }: ChatProps) {
 	const [input, setInput] = useState<string>("");
-    const [logs, setLogs] = useState<string[]>([]);
+    // const [logs, setLogs] = useState<string[]>([]);
 	const inputRef = useRef<HTMLTextAreaElement>(null); // Create a ref for the input element
 	const [counter, setCounter] = useState(0);
     const [isActive, setIsActive] = useState(true); // State to control the interval
 	const [historyIndex, setHistoryIndex] = useState<number>(-1);
 	const [currentMessageIndex, setCurrentMessageIndex] = useState<number | null>(null);
+    const terminalRef = useRef<HTMLDivElement>(null);
+    const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
     const modelResponseStyle = {
         marginBottom: '20px',
     };
 
-	const terminalStyle = {
+	const terminalWindow = {
 		backgroundColor: '#333',
 		color: '#fff',
-		padding: '10px',
 		fontFamily: "'Courier New', Courier, monospace",
-		whiteSpace: 'pre-wrap',
+		whiteSpace: 'pre-wrap', // Use 'pre-wrap' to preserve whitespace and wrap text
+		padding: '5px',
+		borderRadius: '5px',
+		fontSize: '14px',
+		overflow: 'auto',
+		maxHeight: '400px',
 	};
+
+    useEffect(() => {
+        console.log('chatMessages changed:', chatMessages);
+        // Scroll to the bottom of the terminal window whenever messages change
+        if (endOfMessagesRef.current) {
+            console.log('Scrolling to bottom');
+            endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            console.log('endOfMessagesRef.current is null');
+        }
+    }, [chatMessages]);
 
 	useEffect(() => {
 		if (inputRef.current) {
@@ -100,16 +122,7 @@ export default function Chat({
 	return (
 		<div className="flex h-screen w-full flex-col bg-[#1e1e1e]">
 			<div className="flex-1 overflow-auto p-4">
-				{chatMessages.map((message, index) => {
-					// console.log("Message object:", message);
-					// const firstModelResponse = message.iteration_data?.first_model_response ?? "Default response if undefined";
-					// if (firstModelResponse !== "Default response if undefined") {
-					// 	console.log("iteration_data:", message.iteration_data);
-					// 	console.log("first_model_response=", firstModelResponse);
-					// } else {
-					// 	console.log("iteration_data:", message.iteration_data);
-					// 	console.log("first_model_response is undefined", message.iteration_data?.assistant_id, message.iteration_data?.first_model_response);
-					// }						
+				{chatMessages.map((message, index) => {					
 					let lastHistoryItem: any;
 					let status: string = 'debugging...';
 					if ("context" in message && message?.context?.history && message.context.history.length > 0) {
@@ -180,56 +193,22 @@ export default function Chat({
 									)}
 									{message.type === "assistant" && message.iteration_data && (
 										<>
-											{/* Render the first model response */}
 											<div style={modelResponseStyle}>
-												{/* <ReactMarkdown 
-													className="whitespace-pre-wrap"
-													components={{
-														code({ node, inline, className, children, ...props }) {
-															const match = /language-(\w+)/.exec(className || '');
-															return !inline && match ? (
-																<SyntaxHighlighter
-																	style={dark}
-																	language={match[1]}
-																	PreTag="div"
-																	{...props}
-																>
-																	{String(children).replace(/\n$/, '')}
-																</SyntaxHighlighter>
-															) : (
-																<code className={className} {...props}>
-																	{children}
-																</code>
-															);
-														}
-													}}
-												> */}
 										        <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
 													{message.iteration_data.first_model_response || ""}
 												</ReactMarkdown>
 											</div>
-
-											{/* Render the execution result unfiltered as terminal output */}
-                                            <div style={terminalStyle}>
-                                                <Terminal
-                                                    color='green'
-                                                    backgroundColor='black'
-                                                    barColor='black'
-                                                    style={{ fontWeight: "bold", fontSize: "1em" }}
-                                                    commands={{
-                                                        'show-log': () => message.iteration_data.execution_result_unfiltered || "",
-                                                    }}
-                                                    description={{
-                                                        'show-log': 'Shows the execution log',
-                                                    }}
-                                                    msg={message.iteration_data.execution_result_unfiltered || ""}
-                                                />
-                                            </div>
+                                            {message.iteration_data.execution_result_unfiltered && (
+                                                <>
+                                                    <div className="terminal-title">Terminal Output:</div>
+                                                    <div style={terminalWindow} ref={terminalRef}>
+                                                        {message.iteration_data.execution_result_unfiltered}
+														<div ref={endOfMessagesRef} />
+                                                    </div>
+                                                </>
+                                            )}
 										</>
 									)}
-									{/* {message.type === "assistant" && message.context && (
-										<ShowAutoDebugging context={message.context} />
-									)} */}
 								</div>
 							</div>
 						</div>
@@ -268,71 +247,6 @@ export default function Chat({
 		</div>
 	);
 }
-
-// function ShowAutoDebugging({
-// 	context,
-// }: { context: AutoDebugContext }): React.ReactNode {
-// 	const { history } = context;
-// 	const [historyIndex, setHistoryIndex] = useState<number>(-1);
-// 	const lastHistoryItem = history[historyIndex < 0 ? history.length - 1 : historyIndex];
-// 	const newCode = lastHistoryItem.code;
-// 	const [isExpanded, setIsExpanded] = useState(false);
-
-// 	return (
-// 		<div>
-// 			<CodeMirror
-// 				value={newCode}
-// 				height="auto"
-// 				extensions={[
-// 					javascript({ jsx: true }),
-// 					EditorView.lineWrapping,
-// 					customFontSizeTheme,
-// 				]}
-// 				theme={monokaiDimmed}
-// 			/>
-
-// 			{lastHistoryItem.result && (
-// 				<>
-// 					<div> <strong>TERMINAL:</strong> </div>
-// 					<div
-// 						className="terminal-output"
-// 						style={{ backgroundColor: "black", color: "white", padding: "10px", fontSize: "12px", fontWeight: "normal" }}
-// 					>
-// 						<div>
-// 							<pre
-// 								className="whitespace-pre-wrap"
-// 								style={{ fontWeight: "normal" }}
-// 							>
-// 								{lastHistoryItem.result.stdout}
-// 							</pre>
-// 						</div>
-// 						{lastHistoryItem.result.stderr && (
-// 							<div>
-// 								<strong>Errors:</strong>
-// 								<pre
-// 									className="whitespace-pre-wrap"
-// 									style={{ fontWeight: "normal" }}
-// 								>
-// 									{lastHistoryItem.result.stderr}
-// 								</pre>
-// 							</div>
-// 						)}
-// 					</div>
-// 				</>
-// 			)}
-
-// 			<ReactMarkdown
-// 				children={isExpanded ? lastHistoryItem.analysis : `Analysis...`}
-// 				components={{
-// 					p: ({ node, ...props }) => <p style={{ fontSize: '0.8em' }} {...props} />,
-// 				}}
-// 			/>
-// 			<button onClick={() => setIsExpanded(!isExpanded)}>
-// 				{isExpanded ? 'Read less' : 'Read more'}
-// 			</button>
-// 		</div>
-// 	);
-// }
 
 function SendIcon(props: any) {
 	return (

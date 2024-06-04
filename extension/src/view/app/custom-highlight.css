@@ -1,0 +1,56 @@
+/* custom-highlight.css */
+pre {
+    background: #000; /* Black background */
+    color: #dcdcdc; /* Light gray text */
+    padding: 1rem;
+    overflow-x: auto;
+  }
+  
+  pre code {
+    color: inherit; /* Inherit color from pre */
+  }
+  
+  .hljs-keyword,
+  .hljs-selector-tag,
+  .hljs-literal,
+  .hljs-section,
+  .hljs-link {
+    color: #c5a5c5; /* Less greenish color */
+  }
+  
+  .hljs,
+  .hljs-subst {
+    color: #dcdcdc; /* Light gray text */
+  }
+  
+  .hljs-string,
+  .hljs-title,
+  .hljs-name,
+  .hljs-type,
+  .hljs-attribute,
+  .hljs-symbol,
+  .hljs-bullet,
+  .hljs-addition,
+  .hljs-variable,
+  .hljs-template-tag,
+  .hljs-template-variable {
+    color: #8dc891; /* Less greenish color */
+  }
+  
+  .hljs-comment,
+  .hljs-quote,
+  .hljs-deletion {
+    color: #7f7f7f; /* Dark gray for comments */
+  }
+  
+  .hljs-keyword,
+  .hljs-selector-tag,
+  .hljs-literal,
+  .hljs-title,
+  .hljs-section,
+  .hljs-doctag,
+  .hljs-type,
+  .hljs-name,
+  .hljs-strong {
+    font-weight: bold;
+  }

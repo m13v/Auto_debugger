@@ -18,7 +18,7 @@ export default class ViewLoader {
 		if (config) {
 			this._panel = vscode.window.createWebviewPanel(
 				"configView",
-				"Config View",
+				"Coding assistant with auto_debugger",
 				vscode.ViewColumn.One,
 				{
 					enableScripts: true,

@@ -187,7 +187,14 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
         for i in range(total_iterations):
             print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ITERATION %d STARTED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!' % i)
             iteration_data["iterations"].append({
-                "index": i
+                "index": i,
+                "execution_result_filtered": "",
+                "evaluation_result": "",
+                "made_progress": "",
+                "why_none_of_the_solutions_worked": "",
+                "is_repetative_loop": "",
+                "decision_maker": "",
+                "new_iteration_results": ""
             })
             # Store iteration data
 
@@ -197,37 +204,25 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
             Analyze results. IMPORTANT INSTRUCTIONS: You must respond with one paragraph
             """
 
-            evaluation_result = short_model_response(result_evaluator, assistant_id, thread_id)
+            iteration_data = await short_model_response(result_evaluator, assistant_id, thread_id, websocket, iteration_data, "evaluation_result")
             print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! EVALUATION DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            iteration_data["iterations"][-1].update({
-                "evaluation_result": evaluation_result
-            })
             if i > 0:
                 compare_results1 = """
                 Did we make progress compared to the last iteration? IMPORTANT INSTRUCTIONS: You must respond with one word: "yes" or "no".
                 """
-                comparison_results1 = short_model_response(compare_results1, assistant_id, thread_id)
+                iteration_data = await short_model_response(compare_results1, assistant_id, thread_id, websocket, iteration_data, "made_progress")
                 print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Did we make progress? - DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-                iteration_data["iterations"][-1].update({
-                    "made_progress": comparison_results1
-                })
                 compare_results2 = """
                 Why none of the solutions worked? IMPORTANT INSTRUCTIONS: You must respond with one paragraph
                 """
-                comparison_results2 = short_model_response(compare_results2, assistant_id, thread_id)
+                iteration_data = await short_model_response(compare_results2, assistant_id, thread_id, websocket, iteration_data, "why_none_of_the_solutions_worked")
                 print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Why none of the solutions worked? - DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-                iteration_data["iterations"][-1].update({
-                    "why_none_of_the_solutions_worked": comparison_results2
-                })
                 compare_results3 = """
                 Are we in a repetative loop based on the user "Prompt" and the "History of iterations"? IMPORTANT INSTRUCTIONS: You must respond with one word: "yes" or "no".
                 """
-                comparison_results3 = short_model_response(compare_results3, assistant_id, thread_id)
+                iteration_data = await short_model_response(compare_results3, assistant_id, thread_id, websocket, iteration_data, "is_repetative_loop")
                 print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Are we in a repetative loop? - DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-                iteration_data["iterations"][-1].update({
-                    "is_repetative_loop": comparison_results3
-                })
-                if "yes" in comparison_results3.lower():
+                if "yes" in iteration_data["iterations"][-1]["is_repetative_loop"].lower():
                     return "repetative_loop", iteration_data
             decision_maker = """
             Based on the user "Prompt" and last interactions -> decide which of the following next steps is most feasible to take:
@@ -237,18 +232,18 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
             4. Execution results meet expectations, we should stop the iteration
             IMPORTANT INSTRUCTIONS: You must respond with either of: "[1] iterate further", "[2] generate a novel approach", "[3] stop", or "[4] done".
             """
-            decision_maker = short_model_response(decision_maker, assistant_id, thread_id)
+            iteration_data = await short_model_response(decision_maker, assistant_id, thread_id, websocket, iteration_data, "decision_maker")
             print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DECISION MAKER DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            iteration_data["iterations"][-1].update({
-                "decision_maker": decision_maker
-            })
-            if "[1]" in decision_maker.lower():
+            # iteration_data["iterations"][-1].update({
+            #     "decision_maker": decision_maker
+            # })
+            if "[1]" in iteration_data["iterations"][-1]["decision_maker"].lower():
                 new_instructions= "iterate further based on the recent interactions, break up the problem areas into smaller steps, add logs after each one"
-            elif "[2]" in decision_maker.lower():
+            elif "[2]" in iteration_data["iterations"][-1]["decision_maker"].lower():
                 new_instructions= "Come up with a novel approach to user prompt, different from what you have tried already"
-            elif "[3]" in decision_maker.lower():
+            elif "[3]" in iteration_data["iterations"][-1]["decision_maker"].lower():
                 return "stopped", iteration_data
-            elif "[4]" in decision_maker.lower():
+            elif "[4]" in iteration_data["iterations"][-1]["decision_maker"].lower():
                 return "done", iteration_data
             new_iteration_results= new_iteration(new_instructions, assistant_id, thread_id)
             print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NEW ITERATION DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
@@ -274,12 +269,10 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
                     line = process.stdout.readline()
                     if not line:
                         break
-                    iteration_data["iterations"][-1].update({
-                        "execution_result_filtered" : iteration_data["iterations"][-1]["execution_result_filtered"] + line
-                    })
+                    iteration_data["iterations"][-1]["execution_result_filtered"] += line
                     # iteration_data["execution_result_unfiltered"] += line   
-                    if "EXECUTION_RESULT_FILTERED=" in line:
-                        execution_result_filtered = line.split("EXECUTION_RESULT_FILTERED=")[1].strip()
+                    if "***EXECUTION_RESULT_FILTERED***" in line:
+                        execution_result_filtered = line.split("***EXECUTION_RESULT_FILTERED***")[1].strip()
                     await websocket.send(json.dumps({"iteration_data": iteration_data}))
                     print(f"Parent received: {line}", end='')
 
