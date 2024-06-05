@@ -18,4 +18,3 @@ ReactDOM.render(
   <Config vscode={vscode} initialData={window.initialData} />,
   document.getElementById("root")
 );
-

@@ -10,3 +10,6 @@
 * Write me a message on Discord: https://discord.gg/kyuqaGJSN4
 
 **Enjoy!**
+
+Created by Matthew Diakonov
+https://m13v.com

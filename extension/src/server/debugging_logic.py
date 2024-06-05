@@ -188,13 +188,14 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
             print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ITERATION %d STARTED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!' % i)
             iteration_data["iterations"].append({
                 "index": i,
-                "execution_result_filtered": "",
                 "evaluation_result": "",
                 "made_progress": "",
                 "why_none_of_the_solutions_worked": "",
                 "is_repetative_loop": "",
                 "decision_maker": "",
-                "new_iteration_results": ""
+                "new_iteration_results": "",
+                "execution_result_unfiltered": "",
+                "execution_result_filtered": "",
             })
             # Store iteration data
 
@@ -245,12 +246,9 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
                 return "stopped", iteration_data
             elif "[4]" in iteration_data["iterations"][-1]["decision_maker"].lower():
                 return "done", iteration_data
-            new_iteration_results= new_iteration(new_instructions, assistant_id, thread_id)
+            iteration_data= await new_iteration(new_instructions, assistant_id, thread_id, websocket, iteration_data, "new_iteration_results")
             print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NEW ITERATION DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            iteration_data["iterations"][-1].update({
-                "new_iteration_results": new_iteration_results
-            })
-            if "```python" in new_iteration_results: 
+            if "```python" in iteration_data["iterations"][-1]["new_iteration_results"]: 
                 # sandbox = initialize_sandbox()
                 print("Entering PREPARE_SCRIPT_EXECUTION")
 
@@ -260,16 +258,12 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
                     stderr=subprocess.PIPE,
                     text=True
                 )
-
-                # Initialize the unfiltered execution result
-                iteration_data["execution_result_unfiltered"] = ""
-
                 # Stream the output line by line
                 while True:
                     line = process.stdout.readline()
                     if not line:
                         break
-                    iteration_data["iterations"][-1]["execution_result_filtered"] += line
+                    iteration_data["iterations"][-1]["execution_result_unfiltered"] += line
                     # iteration_data["execution_result_unfiltered"] += line   
                     if "***EXECUTION_RESULT_FILTERED***" in line:
                         execution_result_filtered = line.split("***EXECUTION_RESULT_FILTERED***")[1].strip()

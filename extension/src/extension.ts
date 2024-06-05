@@ -24,7 +24,53 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(disposable);
+  // Add a sidebar button
+//   const sidebarProvider = new SidebarProvider(context.extensionUri);
+//   context.subscriptions.push(
+//     vscode.window.registerWebviewViewProvider(SidebarProvider.viewType, sidebarProvider)
+//   );
+// }
+
+// class SidebarProvider implements vscode.WebviewViewProvider {
+//   public static readonly viewType = 'myExtension.sidebar';
+
+//   constructor(private readonly _extensionUri: vscode.Uri) { }
+
+//   public resolveWebviewView(webviewView: vscode.WebviewView) {
+//     webviewView.webview.options = {
+//       enableScripts: true,
+//       localResourceRoots: [this._extensionUri],
+//     };
+
+//     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+
+//     // Handle button click event
+//     webviewView.webview.onDidReceiveMessage(data => {
+//       switch (data.command) {
+//         case 'triggerCommand':
+//           vscode.commands.executeCommand("extension.viewconfig");
+//           break;
+//       }
+//     });
+//   }
+
+//   private _getHtmlForWebview(webview: vscode.Webview) {
+//     const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'sidebar.js'));
+  
+//     return `<!DOCTYPE html>
+//             <html lang="en">
+//             <head>
+//                 <meta charset="UTF-8">
+//                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//                 <title>My Extension Sidebar</title>
+//                 <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css">
+//             </head>
+//             <body>
+//                 <button id="myButton"><i class="codicon codicon-gear"></i> Trigger Command</button>
+//                 <script src="${scriptUri}"></script>
+//             </body>
+//             </html>`;
+//   }
 }
 
-// this method is called when your extension is deactivated
 export function deactivate() {}

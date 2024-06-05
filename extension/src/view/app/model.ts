@@ -80,6 +80,7 @@ export interface Iteration {
     decision_maker?: string;
     new_iteration_results?: string;
     execution_result_filtered?: string;
+    execution_result_unfiltered?: string;
 }
 
 export interface IterationData {

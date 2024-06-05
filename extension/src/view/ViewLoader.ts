@@ -13,13 +13,15 @@ export default class ViewLoader {
 
 	constructor(fileUri: vscode.Uri, extensionPath: string) {
 		this._extensionPath = extensionPath;
+		console.log("Initializing ViewLoader with fileUri:", fileUri.fsPath);
 
 		let config = this.getFileContent(fileUri);
 		if (config) {
+			console.log("Configuration file content loaded successfully.");
 			this._panel = vscode.window.createWebviewPanel(
 				"configView",
 				"Coding assistant with auto_debugger",
-				vscode.ViewColumn.One,
+				vscode.ViewColumn.Two,
 				{
 					enableScripts: true,
 
@@ -30,9 +32,10 @@ export default class ViewLoader {
 			);
 
 			this._panel.webview.html = this.getWebviewContent(config);
+			console.log("Webview content set.");
 			////////////////////////////////////////////////////////////////
 			this._panel.webview.onDidReceiveMessage(
-				(message) => {
+				(message: any) => {
 					console.log("Extension received message", message);
 					codeAgent.onReceiveMessage(message);
 
@@ -71,7 +74,9 @@ export default class ViewLoader {
 					this._panel!.webview.postMessage(message),
 			});
 			console.log("Started code agent", codeAgent);
-
+		} else {
+			console.error("Failed to load configuration file content.");
+		}
 			// this._panel.webview.onDidReceiveMessage(
 			//   message => {
 			//     console.log('Extension received message', message)
@@ -80,7 +85,6 @@ export default class ViewLoader {
 			// })
 
 			////////////////////////////////////////////////////////////////
-		}
 	}
 
 	private getWebviewContent(config: IConfig): string {
@@ -91,6 +95,7 @@ export default class ViewLoader {
 		const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
 
 		const configJson = JSON.stringify(config);
+		console.log("Generated webview HTML content.");
 
 		return `<!DOCTYPE html>
     <html lang="en">
@@ -122,8 +127,11 @@ export default class ViewLoader {
 		if (fs.existsSync(fileUri.fsPath)) {
 			let content = fs.readFileSync(fileUri.fsPath, "utf8");
 			let config: IConfig = JSON.parse(content);
+			console.log("File content read successfully:", content);
 
 			return config;
+		} else {
+			console.error("File does not exist:", fileUri.fsPath);
 		}
 		return undefined;
 	}
@@ -132,10 +140,13 @@ export default class ViewLoader {
 		if (fs.existsSync(fileUri.fsPath)) {
 			let content: string = JSON.stringify(config);
 			fs.writeFileSync(fileUri.fsPath, content);
+			console.log("Configuration saved to", fileUri.fsPath);
 
 			vscode.window.showInformationMessage(
 				`👍 Configuration saved to ${fileUri.fsPath}`,
 			);
+		} else {
+			console.error("File does not exist:", fileUri.fsPath);
 		}
 	}
 }

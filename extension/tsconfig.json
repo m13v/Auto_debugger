@@ -9,22 +9,18 @@
 		"lib": ["es2015", "dom", "es6", "dom.iterable", "scripthost"],
 		"sourceMap": true,
 		"rootDir": "src",
-		"strict": true,   /* enable all strict type-checking options */
-		/* Additional Checks */
-		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
-		// "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
-		// "noUnusedParameters": true,  /* Report errors on unused parameters. */
+		"strict": true,   
 		"baseUrl": ".",
+		"typeRoots": ["./node_modules/@types", "./src/types"],
+		"types": ["vscode"],
 		"paths": {
-		//   "@/components/*": ["./src/view/app/components/*"],
-		//   "@/components/ui/*": ["./src/view/app/components/ui/*"],
-		//   "@/lib/*": ["./src/view/app/lib/*"],
 		  "@/*": ["./src/view/app/*"]
 		}
 	},
 	"include": [
 		"src/**/*",
-		"src/types"
+		"src/types", 
+		"src/**/*.tsx"
 		],
 	"exclude": [
 		"node_modules",

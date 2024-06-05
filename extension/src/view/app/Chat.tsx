@@ -1,52 +1,51 @@
 import React, { useCallback, useState, useEffect, useRef } from "react";
-import { AvatarImage, AvatarFallback, Avatar } from "./components/ui/avatar";
-// import CodeMirror from "@uiw/react-codemirror";
-// import { javascript } from "@codemirror/lang-javascript";
-// import { monokaiDimmed } from "@uiw/codemirror-theme-monokai-dimmed";
-// import { EditorView } from "@codemirror/view";
+// import { AvatarImage, AvatarFallback, Avatar } from "./components/ui/avatar";
 import ReactMarkdown from 'react-markdown';
-// import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-// import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-// import { llamaImage } from './llama.jpg';
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
-import type { AutoDebugContext, Message, UserMessage, isCodeGen } from "./model";
+import type { Message, UserMessage } from "./model";
 import rehypeHighlight from 'rehype-highlight';
-// import rehypeStringify from 'rehype-stringify';
-// import './custom-highlight.css'; // Adjust the path to your custom CSS file
-import 'highlight.js/styles/monokai.css'; // Import the Monokai theme
-// import Terminal from 'terminal-in-react';
-// import Terminal, { ColorMode, TerminalOutput } from 'react-terminal-ui';
-// import { TerminalContextProvider } from "react-terminal";
-// import { css } from '@emotion/react';
+import 'highlight.js/styles/dracula.css'; // Import the Dracula theme
+import { unified } from 'unified';
+import rehypeParse from 'rehype-parse';
+import rehypeStringify from 'rehype-stringify';
+import { ChevronUp, ChevronDown } from 'lucide-react';
+
+
+unified()
+  .use(rehypeParse)
+  .use(rehypeHighlight)
+  .use(rehypeStringify)
+  .process('<pre><code class="language-js">const x = 1;</code></pre>')
+  .then((file) => {
+    console.log(String(file));
+  });
 
 type ChatProps = {
 	messages: Message[];
 	onSendMessage: (message: string) => void;
 };
 
-// const customFontSizeTheme = EditorView.theme({
-// 	"&": {
-// 		fontSize: "12px", // Set your desired font size here
-// 	},
-// 	".cm-content": {
-// 		fontFamily: "monospace", // Optional: Set the font family if needed
-// 	},
-// });
-
 export default function Chat({
 	messages: chatMessages,
 	onSendMessage,
 }: ChatProps) {
 	const [input, setInput] = useState<string>("");
-    // const [logs, setLogs] = useState<string[]>([]);
 	const inputRef = useRef<HTMLTextAreaElement>(null); // Create a ref for the input element
 	const [counter, setCounter] = useState(0);
-    const [isActive, setIsActive] = useState(true); // State to control the interval
+    // const [isActive, setIsActive] = useState(true); // State to control the interval
 	const [historyIndex, setHistoryIndex] = useState<number>(-1);
 	const [currentMessageIndex, setCurrentMessageIndex] = useState<number | null>(null);
     const terminalRef = useRef<HTMLDivElement>(null);
     const endOfMessagesRef = useRef<HTMLDivElement>(null);
+	const [currentIterationIndex, setCurrentIterationIndex] = useState(0);
+    const [visibleIterations, setVisibleIterations] = useState<{ [key: number]: boolean }>({ 0: true });
+	const modelThinkingWindowRef = useRef<HTMLDivElement>(null);
+	// const [hideInitialResponse, setHideInitialResponse] = useState(false);
+
+    const toggleVisibility = (index: number) => {
+        setVisibleIterations((prev) => ({ ...prev, [index]: !prev[index] }));
+    };
 
     const modelResponseStyle = {
         marginBottom: '20px',
@@ -61,17 +60,50 @@ export default function Chat({
 		borderRadius: '5px',
 		fontSize: '14px',
 		overflow: 'auto',
-		maxHeight: '400px',
+		maxHeight: '300px',
 	};
 
+    const modelThinkingWindow = {
+        backgroundColor: '#2e2e2e',
+        color: '#ccc',
+        fontFamily: "'Courier New', Courier, monospace",
+        whiteSpace: 'pre-wrap',
+        padding: '5px',
+        borderRadius: '5px',
+        fontSize: '12px',
+        overflow: 'auto',
+        maxHeight: '200px',
+        marginTop: '20px',
+    };
+
+	// useEffect(() => {
+	// 	const latestMessage = chatMessages[chatMessages.length - 1];
+	// 	if (latestMessage?.type === "assistant" && latestMessage.iteration_data?.iterations.length > 0) {
+	// 		setHideInitialResponse(true);
+	// 	}
+	// }, [chatMessages]);
+
     useEffect(() => {
-        console.log('chatMessages changed:', chatMessages);
-        // Scroll to the bottom of the terminal window whenever messages change
+        const latestMessage = chatMessages[chatMessages.length - 1];
+		if (
+			latestMessage?.type === "assistant" &&
+			latestMessage.iteration_data?.iterations &&
+			latestMessage.iteration_data.iterations.length > currentIterationIndex + 1
+		  ) {
+			setCurrentIterationIndex(currentIterationIndex + 1);
+			setVisibleIterations((prev) => ({ ...prev, [currentIterationIndex + 1]: false }));
+		  }
+    }, [chatMessages, currentIterationIndex]);
+
+    useEffect(() => {
         if (endOfMessagesRef.current) {
-            console.log('Scrolling to bottom');
             endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
-        } else {
-            console.log('endOfMessagesRef.current is null');
+        }
+    }, [chatMessages]);
+
+    useEffect(() => {
+        if (modelThinkingWindowRef.current) {
+            modelThinkingWindowRef.current.scrollTop = modelThinkingWindowRef.current.scrollHeight;
         }
     }, [chatMessages]);
 
@@ -81,27 +113,27 @@ export default function Chat({
 		}
 	}, []);
 
-	useEffect(() => {
-        console.log("Chat messages updated:", chatMessages); // Log chat messages
+	// useEffect(() => {
+    //     console.log("Chat messages updated:", chatMessages); // Log chat messages
 
-        if (!isActive) {
-            return; // If not active, do nothing (effectively pausing the interval)
-        }
+    //     if (!isActive) {
+    //         return; // If not active, do nothing (effectively pausing the interval)
+    //     }
 
-		const interval = setInterval(() => {
-			setCounter((prevCounter) => prevCounter + 0.1);
+	// 	const interval = setInterval(() => {
+	// 		setCounter((prevCounter) => prevCounter + 0.1);
 	
-			// Check the status of the last history item and stop the interval if complete
-			const lastHistoryItem = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1].context?.history?.slice(-1)[0] : null;
-			if (lastHistoryItem && lastHistoryItem.status === 'complete') {
-				console.log("Last History Item Status:", lastHistoryItem.status);
-				setIsActive(false); // Stop the interval by setting isActive to false
-				clearInterval(interval); // Clear the interval immediately
-			}
-		}, 100);
+	// 		// Check the status of the last history item and stop the interval if complete
+	// 		const lastHistoryItem = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1].context?.history?.slice(-1)[0] : null;
+	// 		if (lastHistoryItem && lastHistoryItem.status === 'complete') {
+	// 			console.log("Last History Item Status:", lastHistoryItem.status);
+	// 			setIsActive(false); // Stop the interval by setting isActive to false
+	// 			clearInterval(interval); // Clear the interval immediately
+	// 		}
+	// 	}, 100);
 
-        return () => clearInterval(interval);
-    }, [chatMessages, isActive]); // Include isActive in the dependency array
+    //     return () => clearInterval(interval);
+    // }, [chatMessages, isActive]); // Include isActive in the dependency array
 
     const onSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>) => {
@@ -111,7 +143,7 @@ export default function Chat({
             onSendMessage(newUserMessage.text); // Pass only the text of the new message
             setInput("");
             setCounter(() => 0);
-            setIsActive(true); // Optionally reset the interval when sending a message
+            // setIsActive(true); // Optionally reset the interval when sending a message
 			setCurrentMessageIndex(chatMessages.length); // Set the current message index to the new message
 		},
 		[input, onSendMessage, chatMessages.length]
@@ -137,20 +169,20 @@ export default function Chat({
 								message.type === "user" ? "justify-end" : "items-start"
 								} gap-3 mb-2`}
 						>
-							{message.type === "assistant" && (
+							{/* {message.type === "assistant" && (
 								<>
 									<Avatar className="h-8 w-8">
 										<AvatarImage alt="Assistant" src="/avatar.jpg" />
 										<AvatarFallback>AI</AvatarFallback>
 									</Avatar>
 								</>
-							)}
+							)} */}
 							<div className="max-w-[75%] space-y-2">
 								{message.type === "assistant" && (
 									<>
 										{message.meta?.isCodeGen && (
 											<div className="flex items-center text-white mb-1">
-												{index === (currentMessageIndex+1) && counter > 0 && <span>Thinking [{counter.toFixed(1)} sec]</span>}
+										    	{index === (currentMessageIndex! + 1) && counter > 0 && <span>Thinking [{counter.toFixed(1)} sec]</span>}
 												{status && (
 													<span className="ml-4">
 														Status: {status === 'complete' ? `Complete ✅` : status}
@@ -193,20 +225,110 @@ export default function Chat({
 									)}
 									{message.type === "assistant" && message.iteration_data && (
 										<>
-											<div style={modelResponseStyle}>
-										        <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
-													{message.iteration_data.first_model_response || ""}
-												</ReactMarkdown>
-											</div>
-                                            {message.iteration_data.execution_result_unfiltered && (
-                                                <>
-                                                    <div className="terminal-title">Terminal Output:</div>
-                                                    <div style={terminalWindow} ref={terminalRef}>
-                                                        {message.iteration_data.execution_result_unfiltered}
+											<div>
+												{/* {!hideInitialResponse && ( */}
+													{/* <h2 style={{ fontSize: '1.5em', marginTop: '1em' }}>
+														Initial Model Response
+														<Button
+															variant="secondary"
+															size="sm"
+															onClick={() => toggleVisibility(0)}
+															className="ml-2 mb-2"
+														>
+															{visibleIterations[0] ? (
+																<>
+																	Hide <ChevronUp className="h-4 w-4" />
+																</>
+															) : (
+																<>
+																	Show more <ChevronDown className="h-4 w-4" />
+																</>
+															)}
+														</Button>
+													</h2> */}
+												{/* )} */}
+												{/* {visibleIterations[0] && ( */}
+													<div style={modelResponseStyle}>
+														<ReactMarkdown rehypePlugins={[rehypeHighlight]}>
+															{message.iteration_data.first_model_response || ""}
+														</ReactMarkdown>
 														<div ref={endOfMessagesRef} />
-                                                    </div>
-                                                </>
-                                            )}
+													</div>
+												{/* )} */}
+												{/* {visibleIterations[0] && message.iteration_data.execution_result_unfiltered && ( */}
+												{message.iteration_data.execution_result_unfiltered && (
+													<>
+														<div className="terminal-title">Terminal Output:</div>
+														<div style={terminalWindow} ref={terminalRef}>
+															{message.iteration_data.execution_result_unfiltered}
+															<div ref={endOfMessagesRef} />
+														</div>
+													</>
+												)}
+											</div>
+											{message.iteration_data?.iterations?.map((iteration, iterationIndex) => (
+												<div key={iterationIndex}>
+													<h2 style={{ fontSize: '1.5em', marginTop: '1em' }}>
+														Iteration Step #{iterationIndex + 1}
+														<Button
+															onClick={() => toggleVisibility(iterationIndex + 1)}
+															variant="secondary"
+															className="ml-2 mb-2"
+														>
+															{visibleIterations[iterationIndex + 1] ? (
+																<>
+																	Hide <ChevronUp className="h-4 w-4" />
+																</>
+															) : (
+																<>
+																	Show more <ChevronDown className="h-4 w-4" />
+																</>
+															)}
+														</Button>
+													</h2>
+													{(iterationIndex === currentIterationIndex || visibleIterations[iterationIndex + 1]) && (
+														<>
+															{iteration.evaluation_result && (
+																<div style={modelThinkingWindow} ref={modelThinkingWindowRef}>
+																	<div>Model thinking output:</div>
+																	<div><b>How did execution go? </b> {iteration.evaluation_result}</div>
+																	{iteration.made_progress && (
+																		<div><b>Did we make progress compared to the last iteration? </b> {iteration.made_progress}</div>
+																	)}
+																	{iteration.why_none_of_the_solutions_worked && (
+																		<div><b>Why none of the solutions worked? </b> {iteration.why_none_of_the_solutions_worked}</div>
+																	)}
+																	{iteration.is_repetative_loop && (
+																		<div><b>Are we in a repetitive loop? </b> {iteration.is_repetative_loop}</div>
+																	)}
+																	{iteration.decision_maker && (
+																		<div><b>Decide what's next? </b> {iteration.decision_maker}</div>
+																	)}
+																	<div ref={endOfMessagesRef} />
+																</div>
+															)}
+															<div style={modelResponseStyle} ref={endOfMessagesRef}>
+																{iteration.new_iteration_results && (
+																	<ReactMarkdown rehypePlugins={[rehypeHighlight]}>
+																		{iteration.new_iteration_results}
+																	</ReactMarkdown>
+																)}
+																<div ref={endOfMessagesRef} />
+															</div>
+															{iteration.execution_result_unfiltered && (
+																<>
+																	<div className="terminal-title">Terminal Output:</div>
+																	<div style={terminalWindow} ref={terminalRef}>
+																		{iteration.execution_result_unfiltered}
+																		<div ref={endOfMessagesRef} />
+																	</div>
+																</>
+															)}
+															<div ref={endOfMessagesRef} />
+														</>
+													)}
+												</div>
+											))}
 										</>
 									)}
 								</div>
@@ -233,14 +355,14 @@ export default function Chat({
 								}
 							}}
 						/>
-						<Button
+						{/* <Button
 							className="text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
 							size="icon"
 							type="submit"
 							variant="ghost"
 						>
 							<SendIcon className="h-5 w-5" />
-						</Button>
+						</Button> */}
 					</div>
 				</form>
 			</div>
@@ -248,22 +370,22 @@ export default function Chat({
 	);
 }
 
-function SendIcon(props: any) {
-	return (
-		<svg
-			{...props}
-			xmlns="http://www.w3.org/2000/svg"
-			width="24"
-			height="24"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth="2"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-		>
-			<path d="m22 2-7 20-4-9-9-4Z" />
-			<path d="M22 2 11 13" />
-		</svg>
-	);
-}
+// function SendIcon(props: any) {
+// 	return (
+// 		<svg
+// 			{...props}
+// 			xmlns="http://www.w3.org/2000/svg"
+// 			width="24"
+// 			height="24"
+// 			viewBox="0 0 24 24"
+// 			fill="none"
+// 			stroke="currentColor"
+// 			strokeWidth="2"
+// 			strokeLinecap="round"
+// 			strokeLinejoin="round"
+// 		>
+// 			<path d="m22 2-7 20-4-9-9-4Z" />
+// 			<path d="M22 2 11 13" />
+// 		</svg>
+// 	);
+// }
