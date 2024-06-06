@@ -15,6 +15,9 @@ module.exports = {
   devtool: "inline-source-map",
   resolve: {
     extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
+    // alias: {
+    //   'react-dom': '@hot-loader/react-dom', // if using react-hot-loader
+    // },
     plugins: [new TsconfigPathsPlugin({/* options: see below */})]
   },
   module: {

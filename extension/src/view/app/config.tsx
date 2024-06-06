@@ -52,6 +52,7 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
 						}
 						return prevMessages; // Return previous messages unchanged if no update is needed
 					});
+					break;
 				}
 				case "stream-message": {
 					const streamData = event.data.text;

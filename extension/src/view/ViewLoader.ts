@@ -92,36 +92,36 @@ export default class ViewLoader {
 		const reactAppPathOnDisk = vscode.Uri.file(
 			path.join(this._extensionPath, "configViewer", "configViewer.js"),
 		);
-		const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
+		const reactAppUri = this._panel?.webview.asWebviewUri(reactAppPathOnDisk);
 
 		const configJson = JSON.stringify(config);
 		console.log("Generated webview HTML content.");
 
 		return `<!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>AutoDebugger</title>
-
-        <meta http-equiv="Content-Security-Policy"
-                    content="default-src 'none';
-                             img-src https:;
-                             script-src 'unsafe-eval' 'unsafe-inline' vscode-resource:;
-                             style-src vscode-resource: 'unsafe-inline';">
-
-        <script>
-          window.acquireVsCodeApi = acquireVsCodeApi;
-          window.initialData = ${configJson};
-        </script>
-    </head>
-    <body>
-        <div id="root" class="bg-gray-900"></div>
-
-        <script src="${reactAppUri}"></script>
-    </body>
-    </html>`;
-	}
+		<html lang="en">
+		<head>
+			<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+			<title>AutoDebugger</title>
+	
+			<meta http-equiv="Content-Security-Policy"
+				  content="default-src 'none';
+						   img-src https: data:;
+						   script-src 'unsafe-eval' 'unsafe-inline' vscode-resource:;
+						   style-src vscode-resource: 'unsafe-inline';">
+	
+			<script>
+			  window.acquireVsCodeApi = acquireVsCodeApi;
+			  window.initialData = ${configJson};
+			</script>
+		</head>
+		<body>
+			<div id="root" class="bg-gray-900"></div>
+	
+			<script src="${reactAppUri}"></script>
+		</body>
+		</html>`;
+	  }
 
 	private getFileContent(fileUri: vscode.Uri): IConfig | undefined {
 		if (fs.existsSync(fileUri.fsPath)) {

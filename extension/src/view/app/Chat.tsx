@@ -1,15 +1,18 @@
 import React, { useCallback, useState, useEffect, useRef } from "react";
+// import ReactDOM from 'react-dom';
 // import { AvatarImage, AvatarFallback, Avatar } from "./components/ui/avatar";
 import ReactMarkdown from 'react-markdown';
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import type { Message, UserMessage } from "./model";
 import rehypeHighlight from 'rehype-highlight';
-import 'highlight.js/styles/dracula.css'; // Import the Dracula theme
+// import hljs from 'highlight.js';
+import 'highlight.js/styles/night-owl.css';
+// import 'highlight.js/styles/dracula.css'; 
 import { unified } from 'unified';
 import rehypeParse from 'rehype-parse';
 import rehypeStringify from 'rehype-stringify';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+// import { ChevronUp, ChevronDown } from 'lucide-react';
 
 
 unified()
@@ -277,11 +280,13 @@ export default function Chat({
 														>
 															{visibleIterations[iterationIndex + 1] ? (
 																<>
-																	Hide <ChevronUp className="h-4 w-4" />
+																	{/* Hide <ChevronUp className="h-4 w-4" /> */}
+																	Hide
 																</>
 															) : (
 																<>
-																	Show more <ChevronDown className="h-4 w-4" />
+																	{/* Show more <ChevronDown className="h-4 w-4" /> */}
+																	Show more
 																</>
 															)}
 														</Button>
