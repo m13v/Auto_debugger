@@ -14,6 +14,5 @@ https://github.com/matthew-heartful/Auto_debugger/assets/104702220/b8429887-dc45
 
 **Enjoy!**
 
-
 Created by Matthew Diakonov
 https://m13v.com
