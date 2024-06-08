@@ -23,6 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  
   context.subscriptions.push(disposable);
   // Add a sidebar button
 //   const sidebarProvider = new SidebarProvider(context.extensionUri);
