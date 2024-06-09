@@ -17,54 +17,6 @@ from contextlib import redirect_stdout
 from contextlib import contextmanager
 import subprocess
 
-# async def follow():
-#     print('follow() called')
-#     with open('app.log', 'r') as file:
-#         file.seek(0, 2)  # Move the cursor to the end of the file
-#         while True:
-#             line = file.readline()
-#             print("line: " + line)
-#             if not line:
-#                 await asyncio.sleep(0.1)  # Sleep briefly
-#                 continue
-# WebSocket server handler
-# async def websocket_handler(websocket, path):
-#     async for message in websocket:
-#         data = json.loads(message)
-#         print(f"Received message websocket2: {data}")
-#         # Handle the received message as needed
-        
-# async def receive_messages(uri2, iteration_data, websocket2):
-#     print('receive message function')
-#     async with websockets.connect(uri2) as websocket:
-#         print('websocket connected inside receive message function')
-#         async for message in websocket:
-#             new_data = json.loads(message)
-#             print(f"Received message from websocket2: {new_data}")
-#             iteration_data["execution_result_unfiltered"] += str(new_data)
-            # await websocket.send(json.dumps({"iteration_data": iteration_data}))
-
-
-# @contextmanager
-# def capture_and_print_stdout():
-#     old_stdout = sys.stdout
-#     sys.stdout = io.StringIO()
-#     try:
-#         yield sys.stdout
-#     finally:
-#         sys.stdout.seek(0)
-#         while True:
-#             line = sys.stdout.readline()
-#             if not line:
-#                 break
-#             print("captured line: ",line, end='')
-#         sys.stdout = old_stdout
-
-# async def capture_stdout(coroutine):
-#     with capture_and_print_stdout() as f:
-#         await coroutine
-#     return f.getvalue()
-
 async def send_iteration_data(prompt):
 
     # uri2 = "ws://localhost:8766"
