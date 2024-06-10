@@ -120,12 +120,6 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
         # After the loop, you can now close stdout
         process.stdout.close()
 
-        # execution_result_filtered, model_response_without_code = json.dumps(prepare_script_execution(sandbox, model_response)), model_response_without_code
-        # async for interim_result2 in prepare_script_execution(sandbox, model_response).__aiter__():
-        #         print("interim_result2=", interim_result2)
-        #         iteration_data["execution_result_filtered"] += str(interim_result2)
-        #         # await websocket.send(json.dumps({"iteration_data": iteration_data}))
-
     iteration_data["assistant_id"] = assistant_id
     iteration_data["thread_id"] = thread_id
     iteration_data["model_response_without_code"] = model_response_without_code
