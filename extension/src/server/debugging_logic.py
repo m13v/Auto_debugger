@@ -241,9 +241,5 @@ if __name__ == "__main__":
     prompt = sys.argv[1] if len(sys.argv) > 1 else ""
     asyncio.run(main(prompt))
 
-# prompt = """
-# HI THERE
-
-# """
 # prompt = "Write a Python script that uses AWS S3 to upload, download, and list objects in a specified bucket. The script should handle authentication and error handling."
 # Create a Python program to sort and print out the elements of an array of integers. [17, 41, 5, 22, 54, 6, 29, 3, 13]
