@@ -229,11 +229,6 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
     return "autodebugging finished", iteration_data
 
 async def main(prompt):
-    # Start the WebSocket server
-    # server = await websockets.serve(websocket_handler, "localhost", 8766)
-    # print("WebSocket2 server started on ws://localhost:8766")
-    # asyncio.create_task(follow())
-
     # Run the send_iteration_data coroutine
     await send_iteration_data(prompt)
 
