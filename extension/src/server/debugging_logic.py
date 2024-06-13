@@ -181,9 +181,6 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
             """
             iteration_data = await short_model_response(decision_maker, assistant_id, thread_id, websocket, iteration_data, "decision_maker")
             print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DECISION MAKER DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            # iteration_data["iterations"][-1].update({
-            #     "decision_maker": decision_maker
-            # })
             if "[1]" in iteration_data["iterations"][-1]["decision_maker"].lower():
                 new_instructions= "iterate further based on the recent interactions, break up the problem areas into smaller steps, add logs after each one"
             elif "[2]" in iteration_data["iterations"][-1]["decision_maker"].lower():
