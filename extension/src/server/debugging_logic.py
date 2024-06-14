@@ -77,19 +77,7 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
 
     # After the loop, you can now close stdout
     process.stdout.close()
-    model_response=iteration_data["first_model_response"]
-    # async for interim_result in run_code_interpreter(prompt):
-    #     iteration_data["first_model_response"] += str(interim_result)
-    #     await websocket.send(json.dumps({"iteration_data": iteration_data}))
-
-    # # Collect the final result after the streaming is done
-    # final_result = await run_code_interpreter(prompt).__anext__()
-    # if len(final_result) == 3:
-    #     assistant_id, thread_id, model_response = final_result
-    # else:
-    #     assistant_id, thread_id = final_result[0], final_result[1]
-    #     model_response = iteration_data["first_model_response"]
-        
+    model_response=iteration_data["first_model_response"]        
     model_response_without_code = re.sub(r'```(bash|python|plaintext).*?```', '', model_response, flags=re.DOTALL).strip()
     
     if "```python" in iteration_data["first_model_response"]: 
@@ -192,9 +180,7 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
             iteration_data= await new_iteration(new_instructions, assistant_id, thread_id, websocket, iteration_data, "new_iteration_results")
             print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NEW ITERATION DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             if "```python" in iteration_data["iterations"][-1]["new_iteration_results"]: 
-                # sandbox = initialize_sandbox()
                 print("Entering PREPARE_SCRIPT_EXECUTION")
-
                 process = subprocess.Popen(
                     ["python3", "src/server/e2b_inst_exec.py", model_response],
                     stdout=subprocess.PIPE,
