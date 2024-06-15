@@ -18,10 +18,6 @@ from contextlib import contextmanager
 import subprocess
 
 async def send_iteration_data(prompt):
-
-    # uri2 = "ws://localhost:8766"
-    # async with websockets.connect(uri2) as websocket2:
-    #     # Start the message receiver coroutine as a separate task
     iteration_data = {
         "assistant_id": "",
         "thread_id": "",
