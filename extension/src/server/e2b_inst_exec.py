@@ -8,19 +8,7 @@ import asyncio
 import websockets
 import sys
 
-# Global variable to hold the WebSocket connection
-# websocket_connection = None
-
-# async def initialize_websocket():
-#     global websocket_connection
-#     uri = "ws://localhost:8766"
-#     websocket_connection = await websockets.connect(uri)
-#     print("WebSocket (8766) connection established")
-
-# Load environment variables from .env file
 load_dotenv()
-
-# Get the API key from environment variables
 api_key = os.getenv("E2B_API_KEY")
 
 # Set up logging
