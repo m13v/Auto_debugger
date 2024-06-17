@@ -27,7 +27,6 @@ async def send_iteration_data(prompt):
         "execution_result_filtered": "",
         "iterations": []
     }
-        # asyncio.create_task(receive_messages(uri2, iteration_data, websocket2))
 
     uri = "ws://localhost:8765"
     async with websockets.connect(uri) as websocket:
@@ -35,7 +34,6 @@ async def send_iteration_data(prompt):
         await websocket.send(json.dumps({"status": result, "iteration_data": iteration_data}))
 
 async def auto_debugger(prompt, iteration_data, websocket): #websocket
-# def auto_debugger(prompt):
     total_iterations = 10
     assistant_id = None  # Initialize to None or a default value
     thread_id = None     # Initialize to None or a default value
@@ -77,7 +75,6 @@ async def auto_debugger(prompt, iteration_data, websocket): #websocket
     model_response_without_code = re.sub(r'```(bash|python|plaintext).*?```', '', model_response, flags=re.DOTALL).strip()
     
     if "```python" in iteration_data["first_model_response"]: 
-        # sandbox = initialize_sandbox()
         print("Entering PREPARE_SCRIPT_EXECUTION")
 
         process = subprocess.Popen(
