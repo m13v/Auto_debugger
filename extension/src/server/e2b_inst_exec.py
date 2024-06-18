@@ -19,27 +19,11 @@ logger = logging.getLogger(__name__)
 def handle_stdout(output):
     print(output.line, file=sys.stdout)
     sys.stdout.flush()
-    # logger.info(output.line)
-    # global websocket_connection
-    # message = output.line
-    # if websocket_connection:
-    #     websocket_connection.send(message)
-    #     print(f"Sent message: {message}")
-    # else:
-    #     print("WebSocket (8766) connection not established")
     return output.line
 
 def handle_stderr(output):
     print(output.line, file=sys.stdout)
     sys.stdout.flush()
-    # logger.error(output.line)
-    # global websocket_connection
-    # message = output.line
-    # if websocket_connection:
-    #     websocket_connection.send(message)
-    #     print(f"Sent message: {message}")
-    # else:
-    #     print("WebSocket (8766) connection not established")
     return output.line
 
 def initialize_sandbox():
