@@ -12,7 +12,6 @@ load_dotenv()
 api_key = os.getenv("E2B_API_KEY")
 
 # Set up logging
-# logging.basicConfig(level=logging.INFO, filename='app.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,6 @@ def initialize_sandbox():
     interpreter = CodeInterpreter(api_key=api_key)
     return interpreter
 
-# async def execute_code(sandbox, installation, script):
 def execute_code(sandbox, installation, script):
     results = {
         "installation": {"on_stdout": [], "on_stderr": [], "result": None},
@@ -60,7 +58,6 @@ def execute_code(sandbox, installation, script):
             on_stderr=lambda output: results["execution"]["on_stderr"].append(handle_stderr(output))
         )
 
-        # yield json.dumps(results, indent=4)
         # Check for script errors
         if script_execution.error:
             results["execution"]["result"] = {
@@ -84,8 +81,6 @@ def execute_code(sandbox, installation, script):
                 "stderr": script_execution.logs.stderr
             }
         else:
-            # print("RESULTS:")
-            # print(results)
             results["execution"]["result"] = "script execution did not return any output"
     # Filter logic
     if results.get("installation", {}).get("result") == "success":
@@ -93,8 +88,6 @@ def execute_code(sandbox, installation, script):
     else:
         execution_result_filtered = results.get("installation", {})
     print("EXECUTION_RESULT_FILTERED=",execution_result_filtered)
-    # yield json.dumps(execution_result_filtered, indent=4)
-    # return
     return json.dumps(execution_result_filtered, indent=4)
 
 # async def prepare_script_execution(sandbox, model_response: str):
