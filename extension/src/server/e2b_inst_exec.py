@@ -90,11 +90,7 @@ def execute_code(sandbox, installation, script):
     print("EXECUTION_RESULT_FILTERED=",execution_result_filtered)
     return json.dumps(execution_result_filtered, indent=4)
 
-# async def prepare_script_execution(sandbox, model_response: str):
 def prepare_script_execution(sandbox, model_response: str):
-    # Run the WebSocket initialization
-    # await initialize_websocket()
-
     shell_commands_match = re.search(r'```bash(.*?)```', model_response, re.DOTALL)
     if shell_commands_match:
         shell_commands = shell_commands_match.group(1).strip()
@@ -108,10 +104,6 @@ def prepare_script_execution(sandbox, model_response: str):
     print("script_match=", script_match)
     if script_match:
         script = script_match.group(1).strip()
-
-    # Extract sample terminal output
-    # terminal_output_match = re.search(r'```plaintext(.*?)```', model_response, re.DOTALL)
-    # terminal_output = terminal_output_match.group(1).strip() if terminal_output_match else ""
 
     model_response_without_code = re.sub(r'```(bash|python|plaintext).*?```', '', model_response, flags=re.DOTALL).strip()
 
