@@ -109,13 +109,6 @@ def prepare_script_execution(sandbox, model_response: str):
 
     execution_result = ""
 
-    # if script:
-    #     # Call execute_code and stream the results
-    #     async for interim_result in execute_code(sandbox, shell_commands, script):
-    #         yield interim_result
-    # else:
-    #     print("Python blocks not found in the response.")
-    #     yield None
     if script:
         # Call execute_code and add the results to the JSON
         # print("SHELL=", shell_commands)
