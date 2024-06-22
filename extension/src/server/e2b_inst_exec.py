@@ -111,18 +111,9 @@ def prepare_script_execution(sandbox, model_response: str):
 
     if script:
         # Call execute_code and add the results to the JSON
-        # print("SHELL=", shell_commands)
-        # print("SCRIPT=", script)
         execute_code(sandbox, shell_commands, script)
-        # execution_result_filtered = execute_code(sandbox, shell_commands, script)
-        # for interim_result in execute_code(sandbox, shell_commands, script):
-        #     print("INTERIM_RESULT=", interim_result)
-        #     yield interim_result
-        # print("execution_result=", execution_result_filtered[:30], "...| model_response=", model_response[:30], "...|")
-        # return execution_result_filtered, model_response_without_code
     else:
         print("Python blocks not found in the response.")
-        # return None, model_response_without_code
 
 def main():
     # print("subprocess started")
