@@ -116,15 +116,10 @@ def prepare_script_execution(sandbox, model_response: str):
         print("Python blocks not found in the response.")
 
 def main():
-    # print("subprocess started")
-    # sandbox = sys.argv[1]  # Assuming the first argument is the sandbox
     model_response = sys.argv[1]  # Assuming the second argument is the model response
     sandbox = initialize_sandbox()
     # Execute the function
     execution_result_filtered = prepare_script_execution(sandbox, model_response)
-
-    # Print the result so it can be captured by subprocess
-    # print("execution_result_filtered=", json.dumps(execution_result_filtered))
 
     return execution_result_filtered
 
