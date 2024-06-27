@@ -60,14 +60,6 @@ export default class ViewLoader {
 				undefined,
 				this._disposables,
 			);
-
-			// this._panel.webview.postMessage({
-			//   command: 'update',
-			//   data: {
-			//     "hello": "extension",
-			//    }
-			// });
-
 			const codeAgent = new CodeAgent({
 				// biome-ignore lint/style/noNonNullAssertion: <explanation>
 				postMessage: (message: any) =>
@@ -77,14 +69,6 @@ export default class ViewLoader {
 		} else {
 			console.error("Failed to load configuration file content.");
 		}
-			// this._panel.webview.onDidReceiveMessage(
-			//   message => {
-			//     console.log('Extension received message', message)
-
-			//     codeAgent.receiveMessage(message);
-			// })
-
-			////////////////////////////////////////////////////////////////
 	}
 
 	private getWebviewContent(config: IConfig): string {
