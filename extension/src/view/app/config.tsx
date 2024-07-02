@@ -8,10 +8,6 @@ interface IConfigProps {
 }
 
 const Config = ({ vscode, initialData }: IConfigProps) => {
-	// const [config, setConfig] = useState<IConfig>(() => {
-	//   const oldState = vscode.getState();
-	//   return oldState || { config: initialData };
-	// });
 
 	const [messages, setMessages] = useState<Message[]>([]);
 
@@ -33,9 +29,6 @@ const Config = ({ vscode, initialData }: IConfigProps) => {
 				case "update-context": {
 					const { context } = event.data;
 					console.log("CONFIG: update-context: context=", context); // Log the context update
-					// const { history } = context;
-					// const lastHistoryItem = history[history.length - 1];
-					// const newCode = lastHistoryItem.code;
 
 					setMessages((prevMessages) => {
 						const lastMessage = prevMessages[prevMessages.length - 1];
