@@ -360,14 +360,6 @@ export default function Chat({
 								}
 							}}
 						/>
-						{/* <Button
-							className="text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-							size="icon"
-							type="submit"
-							variant="ghost"
-						>
-							<SendIcon className="h-5 w-5" />
-						</Button> */}
 					</div>
 				</form>
 			</div>
