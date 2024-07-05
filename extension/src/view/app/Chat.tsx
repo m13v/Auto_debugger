@@ -116,28 +116,6 @@ export default function Chat({
 		}
 	}, []);
 
-	// useEffect(() => {
-    //     console.log("Chat messages updated:", chatMessages); // Log chat messages
-
-    //     if (!isActive) {
-    //         return; // If not active, do nothing (effectively pausing the interval)
-    //     }
-
-	// 	const interval = setInterval(() => {
-	// 		setCounter((prevCounter) => prevCounter + 0.1);
-	
-	// 		// Check the status of the last history item and stop the interval if complete
-	// 		const lastHistoryItem = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1].context?.history?.slice(-1)[0] : null;
-	// 		if (lastHistoryItem && lastHistoryItem.status === 'complete') {
-	// 			console.log("Last History Item Status:", lastHistoryItem.status);
-	// 			setIsActive(false); // Stop the interval by setting isActive to false
-	// 			clearInterval(interval); // Clear the interval immediately
-	// 		}
-	// 	}, 100);
-
-    //     return () => clearInterval(interval);
-    // }, [chatMessages, isActive]); // Include isActive in the dependency array
-
     const onSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault();
